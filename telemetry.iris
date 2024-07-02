@@ -8,6 +8,3 @@ struct FlightData:
     u32 computer_id
     f32 current_altitude
     f32[4] mesured_temperatures
-
-struct Avionics:
-    u32[14] sensors_id

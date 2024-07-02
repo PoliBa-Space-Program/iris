@@ -58,7 +58,6 @@ impl WireTypes {
 }
 
 struct Field {
-    number: u32,
     name: String,
     wire_type: WireTypes,
     array: Option<u32>,
@@ -78,6 +77,29 @@ impl Field {
                 format!("{},\n", WireTypes::wire_type_to_string(&self.wire_type))
             }
         }.as_str());
+
+        out
+    }
+
+    fn gen_encode(&self) -> String {
+        let mut out = String::new();
+
+        match self.array {
+            Some(_n) => {
+                out.push_str(format!("for i in self.{} {{\n", self.name).as_str());
+                out.push_str("for x in i.to_be_bytes() {\n");
+                out.push_str("data[index] = x;\n");
+                out.push_str("index += 1;\n");
+                out.push_str("}\n");
+                out.push_str("}\n");
+            },
+            None => {
+                out.push_str(format!("for x in self.{}.to_be_bytes() {{\n", self.name).as_str());
+                out.push_str("data[index] = x;\n");
+                out.push_str("index += 1;\n");
+                out.push_str("}\n");
+            }
+        }
 
         out
     }
@@ -110,22 +132,43 @@ impl Struct {
 
     fn gen_code(&self) -> String {
         let mut out = String::new();
-        let mut opened_parenthesis: Vec<&str> = Vec::new();
-
-        out.push_str(format!("pub mod {} {{\n", self.name).as_str());
-        opened_parenthesis.push("{");
-
-        out.push_str(format!("const {}_NAME_HASH: u32 = {};\n", self.name.to_uppercase(), self.fnv_1a()).as_str());
-        out.push_str(format!("const {}_LENGTH_BYTES: u32 = {} + 4;\n", self.name.to_uppercase(), self.size).as_str());
 
         out.push_str(format!("pub struct {} {{\n", self.name).as_str());
-        opened_parenthesis.push("{");
-
         for f in self.fields.iter() {
             out.push_str(f.gen_declaration().as_str());
         }
+        out.push_str("}\n");
+
+        out.push_str(format!("impl {} {{\n", self.name).as_str());
+
+        out.push_str(format!("pub const NAME_HASH: u32 = {};\n", self.fnv_1a()).as_str());
+        out.push_str(format!("pub const LENGTH_BYTES: u32 = {} + 4;\n", self.size).as_str());
+        
+        out.push_str(format!("pub fn encode(&self) -> [u8; {}] {{\n", self.size + 4).as_str());
+
+        out.push_str(format!("let mut data: [u8; {}] = [0; {}];", self.size + 4, self.size + 4).as_str());
+        out.push_str(format!("let mut index = 0;").as_str());
+
+        out.push_str(format!("for x in u32::to_be_bytes({}) {{\n", self.fnv_1a()).as_str());
+        out.push_str("data[index] = x;\n");
+        out.push_str("index += 1;\n");
+        out.push_str("}\n");
+
+        for f in self.fields.iter() {
+            out.push_str(f.gen_encode().as_str());
+        }
+
+        out.push_str("data\n");
 
         out.push_str("}\n");
+
+        out.push_str(format!("pub fn to_be_bytes(&self) -> [u8; {}] {{\n", self.size + 4).as_str());
+        out.push_str("self.encode()\n");
+        out.push_str("}\n");
+
+        out.push_str(format!("pub fn decode(&self, data: &[u8]) -> {} {{\n", self.name).as_str());
+        out.push_str("}\n");
+
         out.push_str("}\n");
 
         out
@@ -146,10 +189,8 @@ impl Package {
 
     fn gen_code(&self) -> String {
         let mut out = String::new();
-        let mut opened_parenthesis: Vec<&str> = Vec::new();
 
         out.push_str(format!("pub mod {} {{\n", self.name.as_ref().unwrap()).as_str());
-        opened_parenthesis.push("{");
 
         for s in self.structs.values() {
             out.push_str(s.gen_code().as_str());
@@ -207,6 +248,9 @@ fn main() {
             if package.version.is_none() {
                 panic!("Version not found. Before the name declaration you must place the version used.");
             }
+            if package.name.is_some() {
+                panic!("Error at line {}. Package name already defined.", i + 1);
+            }
 
             let name = caps.name("name").unwrap().as_str();
             package.name = Some(name.to_string());
@@ -218,7 +262,7 @@ fn main() {
 
             let name = caps.name("name").unwrap().as_str();
             if package.structs.contains_key(name) {
-                panic!("Eror at line {}. A struct with the name '{name}' already exists.", i + 1);
+                panic!("Error at line {}. A struct with the name '{name}' already exists.", i + 1);
             }
 
             in_struct = true;
@@ -254,7 +298,6 @@ fn main() {
             match package.structs.get_mut(struct_name) {
                 Some(s) => {
                     s.fields.push(Field {
-                        number: s.fields.len() as u32,
                         name: name.to_string(),
                         wire_type: WireTypes::str_to_wire_type(var_type).unwrap(),
                         array: array_size,
@@ -265,7 +308,7 @@ fn main() {
                 None => panic!("Error at line {}. Struct named `{}` not found.", i + 1, struct_name)
             }
         }
-        else if let Some(caps) = blank_line_regex.captures(line) {
+        else if let Some(_caps) = blank_line_regex.captures(line) {
             
         }
         else {
@@ -275,5 +318,40 @@ fn main() {
 
     
     let mut dist = fs::File::create("dist.rs").expect("Error while creating the file.");
+    dist.write_all(b"#![no_std]\n");
+    dist.write_all(b"pub mod iris {\n");
+    
+    dist.write_all(b"pub mod utils {\n");
+    dist.write_all(b"pub fn from_be_bytes_u8(a: &[u8; 1]) -> u8 { a[0] }
+    pub fn from_be_bytes_u16(a: &[u8; 2]) -> u16 { ((a[0] as u16) << 8) | ((a[1] as u16) << 0) }
+    pub fn from_be_bytes_u32(a: &[u8; 4]) -> u32 { ((a[0] as u32) << 32) | ((a[1] as u32) << 16) | ((a[2] as u32) << 8) | ((a[3] as u32) << 0) }
+    pub fn from_be_bytes_i8(a: &[u8; 1]) -> i8 { a[0] as i8 }
+    pub fn from_be_bytes_i16(a: &[u8; 2]) -> i16 { ((a[0] as i16) << 8) | ((a[1] as i16) << 0) }
+    pub fn from_be_bytes_i32(a: &[u8; 4]) -> i32 { ((a[0] as i32) << 32) | ((a[1] as i32) << 16) | ((a[2] as i32) << 8) | ((a[3] as i32) << 0) }
+    pub fn from_be_bytes_f32(a: &[u8; 4]) -> f32 { (((a[0] as u32) << 32) | ((a[1] as u32) << 16) | ((a[2] as u32) << 8) | ((a[3] as u32) << 0)) as f32 }
+    pub fn from_be_bytes_bool(a: &[u8; 1]) -> bool { a[0] != 0 }\n");
+    dist.write_all(b"}\n");
+
     dist.write_all(package.gen_code().as_bytes());
+
+    dist.write(b"enum DecodeRes {\n");
+    for s in package.structs.values() {
+        dist.write_all(format!("{}_{}({}::{}),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
+    }
+    dist.write_all(b"}\n");
+
+    dist.write_all(b"pub fn decode(data: &[u8]) -> Result<DecodeRes, &str> {\n");
+    
+    dist.write_all(b"let struct_name_hash = ((data[0] as u32) << 32) | ((data[1] as u32) << 16) | ((data[2] as u32) << 8) | ((data[3] as u32) << 0);\n");
+    
+    dist.write_all(b"match struct_name_hash {\n");
+    for s in package.structs.values() {
+        dist.write_all(format!("{}::{}::NAME_HASH if data.len() == {}::{}::BYTES_LENGTH => Ok(DecodeRes::{}_{}({}::{}::decode(&data))),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
+    }
+    dist.write_all(b"_ => Err(\"Unknown data.\")\n");
+    dist.write_all(b"}\n");
+    
+    dist.write_all(b"}\n");
+
+    dist.write_all(b"}\n");
 }
