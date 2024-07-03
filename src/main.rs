@@ -103,6 +103,46 @@ impl Field {
 
         out
     }
+
+    fn gen_default(&self) -> String {
+        let mut out = String::new();
+
+        out.push_str(format!("{}: ", self.name).as_str());
+        out.push_str(match self.array {
+            Some(n) => format!("[{}; {}]", match self.wire_type {
+                WireTypes::U8 | WireTypes::U16 | WireTypes::U32 | WireTypes::I8 | WireTypes::I16 | WireTypes::I32 => "0",
+                WireTypes::BOOL => "false",
+                WireTypes::F32 => "0.0"
+            }, n),
+            None => format!("{}", match self.wire_type {
+                WireTypes::U8 | WireTypes::U16 | WireTypes::U32 | WireTypes::I8 | WireTypes::I16 | WireTypes::I32 => "0",
+                WireTypes::BOOL => "false",
+                WireTypes::F32 => "0.0"
+            })
+        }.as_str());
+        out.push_str(",\n");
+
+        out
+    }
+
+    fn gen_from_bytes(&self) -> String {
+        let mut out = String::new();
+
+        match self.array {
+            Some(n) => {
+                out.push_str(format!("for i in 0..{} {{\n", n).as_str());
+                out.push_str(format!("out.{}[i] = utils::from_be_bytes_{}(&data[index..index+4]);\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
+                out.push_str("index += 4;\n");
+                out.push_str("}\n");
+            },
+            None => {
+                out.push_str(format!("out.{} = utils::from_be_bytes_{}(&data[index..index+4]);\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
+                out.push_str("index += 4;\n");
+            }
+        }
+
+        out
+    }
 }
 
 struct Struct {
@@ -167,6 +207,21 @@ impl Struct {
         out.push_str("}\n");
 
         out.push_str(format!("pub fn decode(&self, data: &[u8]) -> {} {{\n", self.name).as_str());
+        
+        out.push_str(format!("let mut out = {} {{\n", self.name).as_str());
+        for f in self.fields.iter() {
+            out.push_str(f.gen_default().as_str());
+        }
+        out.push_str("};\n");
+
+        out.push_str("let mut index = 4;\n");
+
+        for f in self.fields.iter() {
+            out.push_str(f.gen_from_bytes().as_str());
+        }
+
+        out.push_str("out\n");
+
         out.push_str("}\n");
 
         out.push_str("}\n");
@@ -234,7 +289,7 @@ fn main() {
     for (i, line) in cnt.lines().enumerate() {
         if let Some(caps) = version_regex.captures(line) {
             if package.version.is_some() {
-                panic!("Duplicate version declaration.");
+                panic!("Version already declared.");
             }
             
             let version = caps.name("number").unwrap().as_str();

@@ -80,7 +80,29 @@ pub mod iris {
             pub fn to_be_bytes(&self) -> [u8; 36] {
                 self.encode()
             }
-            pub fn decode(&self, data: &[u8]) -> FlightData {}
+            pub fn decode(&self, data: &[u8]) -> FlightData {
+                let mut out = FlightData {
+                    max_altitude: 0.0,
+                    max_velocity: 0.0,
+                    computer_id: 0,
+                    current_altitude: 0.0,
+                    mesured_temperatures: [0.0; 4],
+                };
+                let mut index = 4;
+                out.max_altitude = utils::from_be_bytes_f32(&data[index..index + 4]);
+                index += 4;
+                out.max_velocity = utils::from_be_bytes_f32(&data[index..index + 4]);
+                index += 4;
+                out.computer_id = utils::from_be_bytes_u32(&data[index..index + 4]);
+                index += 4;
+                out.current_altitude = utils::from_be_bytes_f32(&data[index..index + 4]);
+                index += 4;
+                for i in 0..4 {
+                    out.mesured_temperatures[i] = utils::from_be_bytes_f32(&data[index..index + 4]);
+                    index += 4;
+                }
+                out
+            }
         }
     }
     enum DecodeRes {
