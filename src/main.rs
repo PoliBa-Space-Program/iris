@@ -131,13 +131,13 @@ impl Field {
         match self.array {
             Some(n) => {
                 out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+4].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
-                out.push_str("index += 4;\n");
+                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), self.size).as_str());
+                out.push_str(format!("index += {};\n", self.size).as_str());
                 out.push_str("}\n");
             },
             None => {
-                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+4].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
-                out.push_str("index += 4;\n");
+                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), self.size).as_str());
+                out.push_str(format!("index += {};\n", self.size).as_str());
             }
         }
 
@@ -147,7 +147,7 @@ impl Field {
 
 struct Struct {
     name: String,
-    fields: Vec<Field>,
+    fields: HashMap<String, Field>,
     size: u32
 }
 
@@ -174,7 +174,7 @@ impl Struct {
         let mut out = String::new();
 
         out.push_str(format!("pub struct {} {{\n", self.name).as_str());
-        for f in self.fields.iter() {
+        for f in self.fields.values() {
             out.push_str(f.gen_declaration().as_str());
         }
         out.push_str("}\n");
@@ -184,17 +184,17 @@ impl Struct {
         out.push_str(format!("pub const NAME_HASH: u32 = {};\n", self.fnv_1a()).as_str());
         out.push_str(format!("pub const BYTES_LENGTH: usize = {} + 4;\n", self.size).as_str());
         
-        out.push_str(format!("pub fn encode(&self) -> [u8; {}] {{\n", self.size + 4).as_str());
+        out.push_str(format!("pub fn encode(&self) -> [u8; {}::BYTES_LENGTH] {{\n", self.name).as_str());
 
-        out.push_str(format!("let mut data: [u8; {}] = [0; {}];", self.size + 4, self.size + 4).as_str());
+        out.push_str(format!("let mut data: [u8; {}::BYTES_LENGTH] = [0; {}::BYTES_LENGTH];", self.name, self.name).as_str());
         out.push_str(format!("let mut index = 0;").as_str());
 
-        out.push_str(format!("for x in u32::to_be_bytes({}) {{\n", self.fnv_1a()).as_str());
+        out.push_str(format!("for x in u32::to_be_bytes({}::NAME_HASH) {{\n", self.name).as_str());
         out.push_str("data[index] = x;\n");
         out.push_str("index += 1;\n");
         out.push_str("}\n");
 
-        for f in self.fields.iter() {
+        for f in self.fields.values() {
             out.push_str(f.gen_encode().as_str());
         }
 
@@ -202,21 +202,21 @@ impl Struct {
 
         out.push_str("}\n");
 
-        out.push_str(format!("pub fn to_be_bytes(&self) -> [u8; {}] {{\n", self.size + 4).as_str());
+        out.push_str(format!("pub fn to_be_bytes(&self) -> [u8; {}::BYTES_LENGTH] {{\n", self.name).as_str());
         out.push_str("self.encode()\n");
         out.push_str("}\n");
 
         out.push_str(format!("pub fn decode(data: &[u8]) -> {} {{\n", self.name).as_str());
         
         out.push_str(format!("let mut out = {} {{\n", self.name).as_str());
-        for f in self.fields.iter() {
+        for f in self.fields.values() {
             out.push_str(f.gen_default().as_str());
         }
         out.push_str("};\n");
 
         out.push_str("let mut index = 4;\n");
 
-        for f in self.fields.iter() {
+        for f in self.fields.values() {
             out.push_str(f.gen_from_bytes().as_str());
         }
 
@@ -324,7 +324,7 @@ fn main() {
             struct_name = name;
             package.structs.insert(name.to_string(), Struct {
                 name: name.to_string(),
-                fields: Vec::new(),
+                fields: HashMap::new(),
                 size: 0
             });
         }
@@ -352,13 +352,18 @@ fn main() {
 
             match package.structs.get_mut(struct_name) {
                 Some(s) => {
-                    s.fields.push(Field {
-                        name: name.to_string(),
-                        wire_type: WireTypes::str_to_wire_type(var_type).unwrap(),
-                        array: array_size,
-                        size: WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1)
-                    });
-                    s.size += s.fields.last().unwrap().size;
+                    if s.fields.contains_key(&name.to_string()) {
+                        panic!("Error at line {}. A field named `{}` already exists in the struct.", i + 1, name);   
+                    }
+                    else {
+                        s.fields.insert(name.to_string(), Field {
+                            name: name.to_string(),
+                            wire_type: WireTypes::str_to_wire_type(var_type).unwrap(),
+                            array: array_size,
+                            size: WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1)
+                        });
+                        s.size += WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1);
+                    }
                 },
                 None => panic!("Error at line {}. Struct named `{}` not found.", i + 1, struct_name)
             }
@@ -367,7 +372,7 @@ fn main() {
             
         }
         else {
-            panic!("Invalid syntax at line {}", i + 1);
+            panic!("Error at line {}. Invalid syntax.", i + 1);
         }
     }
 
@@ -378,19 +383,19 @@ fn main() {
 
     dist.write_all(package.gen_code().as_bytes());
 
-    dist.write(b"pub enum DecodeRes {\n");
+    dist.write(b"pub enum Structs {\n");
     for s in package.structs.values() {
         dist.write_all(format!("{}_{}({}::{}),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
     }
     dist.write_all(b"}\n");
 
-    dist.write_all(b"pub fn decode(data: &[u8]) -> Result<DecodeRes, &str> {\n");
+    dist.write_all(b"pub fn decode(data: &[u8]) -> Result<Structs, &str> {\n");
     
-    dist.write_all(b"let struct_name_hash = ((data[0] as u32) << 24) | ((data[1] as u32) << 16) | ((data[2] as u32) << 8) | ((data[3] as u32) << 0);\n");
+    dist.write_all(b"let struct_name_hash = u32::from_be_bytes(data[0..4].try_into().unwrap());\n");
     
     dist.write_all(b"match struct_name_hash {\n");
     for s in package.structs.values() {
-        dist.write_all(format!("{}::{}::NAME_HASH if data.len() == {}::{}::BYTES_LENGTH => Ok(DecodeRes::{}_{}({}::{}::decode(&data))),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
+        dist.write_all(format!("{}::{}::NAME_HASH if data.len() == {}::{}::BYTES_LENGTH => Ok(Structs::{}_{}({}::{}::decode(&data))),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
     }
     dist.write_all(b"_ => Err(\"Unknown data.\")\n");
     dist.write_all(b"}\n");
