@@ -131,13 +131,13 @@ impl Field {
         match self.array {
             Some(n) => {
                 out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), self.size).as_str());
-                out.push_str(format!("index += {};\n", self.size).as_str());
+                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), WireTypes::size_wire_type(&self.wire_type)).as_str());
+                out.push_str(format!("index += {};\n", WireTypes::size_wire_type(&self.wire_type)).as_str());
                 out.push_str("}\n");
             },
             None => {
-                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), self.size).as_str());
-                out.push_str(format!("index += {};\n", self.size).as_str());
+                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), WireTypes::size_wire_type(&self.wire_type)).as_str());
+                out.push_str(format!("index += {};\n", WireTypes::size_wire_type(&self.wire_type)).as_str());
             }
         }
 
@@ -148,6 +148,7 @@ impl Field {
 struct Struct {
     name: String,
     fields: HashMap<String, Field>,
+    fields_order: Vec<String>,
     size: u32
 }
 
@@ -174,8 +175,8 @@ impl Struct {
         let mut out = String::new();
 
         out.push_str(format!("pub struct {} {{\n", self.name).as_str());
-        for f in self.fields.values() {
-            out.push_str(f.gen_declaration().as_str());
+        for f in &self.fields_order {
+            out.push_str(self.fields.get(f).unwrap().gen_declaration().as_str());
         }
         out.push_str("}\n");
 
@@ -194,8 +195,8 @@ impl Struct {
         out.push_str("index += 1;\n");
         out.push_str("}\n");
 
-        for f in self.fields.values() {
-            out.push_str(f.gen_encode().as_str());
+        for f in &self.fields_order {
+            out.push_str(self.fields.get(f).unwrap().gen_encode().as_str());
         }
 
         out.push_str("data\n");
@@ -209,15 +210,15 @@ impl Struct {
         out.push_str(format!("pub fn decode(data: &[u8]) -> {} {{\n", self.name).as_str());
         
         out.push_str(format!("let mut out = {} {{\n", self.name).as_str());
-        for f in self.fields.values() {
-            out.push_str(f.gen_default().as_str());
+        for f in &self.fields_order {
+            out.push_str(self.fields.get(f).unwrap().gen_default().as_str());
         }
         out.push_str("};\n");
 
         out.push_str("let mut index = 4;\n");
 
-        for f in self.fields.values() {
-            out.push_str(f.gen_from_bytes().as_str());
+        for f in &self.fields_order {
+            out.push_str(self.fields.get(f).unwrap().gen_from_bytes().as_str());
         }
 
         out.push_str("out\n");
@@ -325,6 +326,7 @@ fn main() {
             package.structs.insert(name.to_string(), Struct {
                 name: name.to_string(),
                 fields: HashMap::new(),
+                fields_order: Vec::new(),
                 size: 0
             });
         }
@@ -363,6 +365,7 @@ fn main() {
                             size: WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1)
                         });
                         s.size += WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1);
+                        s.fields_order.push(name.to_string());
                     }
                 },
                 None => panic!("Error at line {}. Struct named `{}` not found.", i + 1, struct_name)

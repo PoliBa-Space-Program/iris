@@ -2,11 +2,11 @@
 pub mod iris {
     pub mod Telemetry {
         pub struct FlightData {
-            pub mesured_temperatures: [f32; 4],
             pub max_altitude: f32,
-            pub current_altitude: f32,
-            pub computer_id: u8,
             pub max_velocity: f32,
+            pub computer_id: u8,
+            pub current_altitude: f32,
+            pub mesured_temperatures: [f32; 4],
         }
         impl FlightData {
             pub const NAME_HASH: u32 = 61427819;
@@ -18,17 +18,11 @@ pub mod iris {
                     data[index] = x;
                     index += 1;
                 }
-                for i in self.mesured_temperatures {
-                    for x in i.to_be_bytes() {
-                        data[index] = x;
-                        index += 1;
-                    }
-                }
                 for x in self.max_altitude.to_be_bytes() {
                     data[index] = x;
                     index += 1;
                 }
-                for x in self.current_altitude.to_be_bytes() {
+                for x in self.max_velocity.to_be_bytes() {
                     data[index] = x;
                     index += 1;
                 }
@@ -36,9 +30,15 @@ pub mod iris {
                     data[index] = x;
                     index += 1;
                 }
-                for x in self.max_velocity.to_be_bytes() {
+                for x in self.current_altitude.to_be_bytes() {
                     data[index] = x;
                     index += 1;
+                }
+                for i in self.mesured_temperatures {
+                    for x in i.to_be_bytes() {
+                        data[index] = x;
+                        index += 1;
+                    }
                 }
                 data
             }
@@ -47,27 +47,27 @@ pub mod iris {
             }
             pub fn decode(data: &[u8]) -> FlightData {
                 let mut out = FlightData {
-                    mesured_temperatures: [0.0; 4],
                     max_altitude: 0.0,
-                    current_altitude: 0.0,
-                    computer_id: 0,
                     max_velocity: 0.0,
+                    computer_id: 0,
+                    current_altitude: 0.0,
+                    mesured_temperatures: [0.0; 4],
                 };
                 let mut index = 4;
-                for i in 0..4 {
-                    out.mesured_temperatures[i] =
-                        f32::from_be_bytes(data[index..index + 16].try_into().unwrap());
-                    index += 16;
-                }
                 out.max_altitude = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
                 index += 4;
-                out.current_altitude =
-                    f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                out.max_velocity = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
                 index += 4;
                 out.computer_id = u8::from_be_bytes(data[index..index + 1].try_into().unwrap());
                 index += 1;
-                out.max_velocity = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                out.current_altitude =
+                    f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
                 index += 4;
+                for i in 0..4 {
+                    out.mesured_temperatures[i] =
+                        f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                    index += 4;
+                }
                 out
             }
         }
