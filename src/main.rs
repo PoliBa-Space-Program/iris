@@ -131,12 +131,12 @@ impl Field {
         match self.array {
             Some(n) => {
                 out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-                out.push_str(format!("out.{}[i] = utils::from_be_bytes_{}(&data[index..index+4]).unwrap();\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
+                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+4].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
                 out.push_str("index += 4;\n");
                 out.push_str("}\n");
             },
             None => {
-                out.push_str(format!("out.{} = utils::from_be_bytes_{}(&data[index..index+4]).unwrap();\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
+                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+4].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type)).as_str());
                 out.push_str("index += 4;\n");
             }
         }
@@ -246,8 +246,6 @@ impl Package {
         let mut out = String::new();
 
         out.push_str(format!("pub mod {} {{\n", self.name.as_ref().unwrap()).as_str());
-
-        out.push_str("use super::utils;\n");
 
         for s in self.structs.values() {
             out.push_str(s.gen_code().as_str());
@@ -377,17 +375,6 @@ fn main() {
     let mut dist = fs::File::create("dist.rs").expect("Error while creating the file.");
     dist.write_all(b"#![no_std]\n");
     dist.write_all(b"pub mod iris {\n");
-    
-    dist.write_all(b"pub mod utils {\n");
-    dist.write_all(b"pub fn from_be_bytes_u8(a: &[u8]) -> Result<u8, &str> {match a.len() { 1 => Ok(a[0]), _ => Err(\"The length must be 1.\") }}
-        pub fn from_be_bytes_u16(a: &[u8]) -> Result<u16, &str> {match a.len() { 2 => Ok(((a[0] as u16) << 8) | ((a[1] as u16) << 0)), _ => Err(\"The length must be 2.\") }}
-        pub fn from_be_bytes_u32(a: &[u8]) -> Result<u32, &str> {match a.len() { 4 => Ok(((a[0] as u32) << 24) | ((a[1] as u32) << 16) | ((a[2] as u32) << 8) | ((a[3] as u32) << 0)), _ => Err(\"The length must be 4.\") }}
-        pub fn from_be_bytes_i8(a: &[u8]) -> Result<i8, &str> {match a.len() { 1 => Ok(a[0] as i8), _ => Err(\"The length must be 1.\") }}
-        pub fn from_be_bytes_i16(a: &[u8]) -> Result<i16, &str> {match a.len() { 2 => Ok(((a[0] as i16) << 8) | ((a[1] as i16) << 0)), _ => Err(\"The length must be 2.\") }}
-        pub fn from_be_bytes_i32(a: &[u8]) -> Result<i32, &str> {match a.len() { 4 => Ok(((a[0] as i32) << 24) | ((a[1] as i32) << 16) | ((a[2] as i32) << 8) | ((a[3] as i32) << 0)), _ => Err(\"The length must be 4.\") }}
-        pub fn from_be_bytes_f32(a: &[u8]) -> Result<f32, &str> {match a.len() { 4 => Ok((((a[0] as u32) << 24) | ((a[1] as u32) << 16) | ((a[2] as u32) << 8) | ((a[3] as u32) << 0)) as f32), _ => Err(\"The length must be 4.\") }}
-        pub fn from_be_bytes_bool(a: &[u8]) -> Result<bool, &str> {match a.len() { 1 => Ok(a[0] != 0), _ => Err(\"The length must be 1.\") }}\n");
-    dist.write_all(b"}\n");
 
     dist.write_all(package.gen_code().as_bytes());
 
