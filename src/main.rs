@@ -1,17 +1,25 @@
-use std::env;
-
+use clap::Parser;
 
 use core::parser::parse;
 
 mod core;
 
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    src: String,
+
+    #[arg(short, long, default_value_t = String::from("."))]
+    out: String,
+
+    #[arg(short, long, default_value_t = String::from("rust"))]
+    lang: String,
+}
+
 fn main() {
-    let args: Vec<String> = env::args().collect();    
-    
-    if args.len() != 2 {
-        panic!("Excpected file path.");
-    }
-    
-    parse(&args[1]);
+    let args = Args::parse();
+
+    parse(&args.src);
 }
