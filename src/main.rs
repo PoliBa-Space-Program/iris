@@ -9,7 +9,7 @@ use regex::Regex;
 const VERSION: &str = "0.1.0";
 
 
-enum WireTypes {
+enum Types {
     U8,
     I8,
     BOOL,
@@ -20,46 +20,46 @@ enum WireTypes {
     F32
 }
 
-impl WireTypes {
-    fn str_to_wire_type(s: &str) -> Result<WireTypes, &str> {
+impl Types {
+    fn from_str(s: &str) -> Result<Types, &str> {
         match s {
-            "u8" => Ok(WireTypes::U8),
-            "i8" => Ok(WireTypes::I8),
-            "bool" => Ok(WireTypes::BOOL),
-            "u16" => Ok(WireTypes::U16),
-            "i16" => Ok(WireTypes::I16),
-            "u32" => Ok(WireTypes::U32),
-            "i32" => Ok(WireTypes::I32),
-            "f32" => Ok(WireTypes::F32),
+            "u8" => Ok(Types::U8),
+            "i8" => Ok(Types::I8),
+            "bool" => Ok(Types::BOOL),
+            "u16" => Ok(Types::U16),
+            "i16" => Ok(Types::I16),
+            "u32" => Ok(Types::U32),
+            "i32" => Ok(Types::I32),
+            "f32" => Ok(Types::F32),
             _ => Err("No compatible wire type found.")
         }
     }
 
-    fn size_wire_type(t: &WireTypes) -> u32 {
-        match t {
-            WireTypes::U8 | WireTypes::I8 | WireTypes::BOOL => 1,
-            WireTypes::U16 | WireTypes::I16 => 2,
-            WireTypes::U32 | WireTypes::I32 | WireTypes::F32 => 4
+    fn size(&self) -> u32 {
+        match self {
+            Types::U8 | Types::I8 | Types::BOOL => 1,
+            Types::U16 | Types::I16 => 2,
+            Types::U32 | Types::I32 | Types::F32 => 4
         }
     }
 
-    fn wire_type_to_string(t: &WireTypes) -> String {
-        match t {
-            WireTypes::U8 => String::from("u8"),
-            WireTypes::I8 => String::from("i8"),
-            WireTypes::BOOL => String::from("bool"),
-            WireTypes::U16 => String::from("u16"),
-            WireTypes::I16 => String::from("i16"),
-            WireTypes::U32 => String::from("u32"),
-            WireTypes::I32 => String::from("i32"),
-            WireTypes::F32 => String::from("f32")
+    fn to_string(&self) -> String {
+        match self {
+            Types::U8 => String::from("u8"),
+            Types::I8 => String::from("i8"),
+            Types::BOOL => String::from("bool"),
+            Types::U16 => String::from("u16"),
+            Types::I16 => String::from("i16"),
+            Types::U32 => String::from("u32"),
+            Types::I32 => String::from("i32"),
+            Types::F32 => String::from("f32")
         }
     }
 }
 
 struct Field {
     name: String,
-    wire_type: WireTypes,
+    wire_type: Types,
     array: Option<u32>,
     size: u32
 }
@@ -71,10 +71,10 @@ impl Field {
         out.push_str(format!("pub {}: ", self.name).as_str());
         out.push_str(match self.array {
             Some(n) => {
-                format!("[{}; {}],\n", WireTypes::wire_type_to_string(&self.wire_type), n)
+                format!("[{}; {}],\n", self.wire_type.to_string(), n)
             },
             None => {
-                format!("{},\n", WireTypes::wire_type_to_string(&self.wire_type))
+                format!("{},\n", self.wire_type.to_string())
             }
         }.as_str());
 
@@ -110,14 +110,14 @@ impl Field {
         out.push_str(format!("{}: ", self.name).as_str());
         out.push_str(match self.array {
             Some(n) => format!("[{}; {}]", match self.wire_type {
-                WireTypes::U8 | WireTypes::U16 | WireTypes::U32 | WireTypes::I8 | WireTypes::I16 | WireTypes::I32 => "0",
-                WireTypes::BOOL => "false",
-                WireTypes::F32 => "0.0"
+                Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
+                Types::BOOL => "false",
+                Types::F32 => "0.0"
             }, n),
             None => format!("{}", match self.wire_type {
-                WireTypes::U8 | WireTypes::U16 | WireTypes::U32 | WireTypes::I8 | WireTypes::I16 | WireTypes::I32 => "0",
-                WireTypes::BOOL => "false",
-                WireTypes::F32 => "0.0"
+                Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
+                Types::BOOL => "false",
+                Types::F32 => "0.0"
             })
         }.as_str());
         out.push_str(",\n");
@@ -131,13 +131,13 @@ impl Field {
         match self.array {
             Some(n) => {
                 out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), WireTypes::size_wire_type(&self.wire_type)).as_str());
-                out.push_str(format!("index += {};\n", WireTypes::size_wire_type(&self.wire_type)).as_str());
+                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.wire_type.to_string(), self.wire_type.size()).as_str());
+                out.push_str(format!("index += {};\n", self.wire_type.size()).as_str());
                 out.push_str("}\n");
             },
             None => {
-                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, WireTypes::wire_type_to_string(&self.wire_type), WireTypes::size_wire_type(&self.wire_type)).as_str());
-                out.push_str(format!("index += {};\n", WireTypes::size_wire_type(&self.wire_type)).as_str());
+                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.wire_type.to_string(), self.wire_type.size()).as_str());
+                out.push_str(format!("index += {};\n", self.wire_type.size()).as_str());
             }
         }
 
@@ -360,11 +360,11 @@ fn main() {
                     else {
                         s.fields.insert(name.to_string(), Field {
                             name: name.to_string(),
-                            wire_type: WireTypes::str_to_wire_type(var_type).unwrap(),
+                            wire_type: Types::from_str(var_type).unwrap(),
                             array: array_size,
-                            size: WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1)
+                            size: Types::from_str(var_type).unwrap().size() * array_size.unwrap_or(1)
                         });
-                        s.size += WireTypes::size_wire_type(&WireTypes::str_to_wire_type(var_type).unwrap()) * array_size.unwrap_or(1);
+                        s.size += Types::from_str(var_type).unwrap().size() * array_size.unwrap_or(1);
                         s.fields_order.push(name.to_string());
                     }
                 },
