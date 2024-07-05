@@ -31,7 +31,7 @@ impl Types {
             "u32" => Ok(Types::U32),
             "i32" => Ok(Types::I32),
             "f32" => Ok(Types::F32),
-            _ => Err("No compatible wire type found.")
+            _ => Err("No compatible type found.")
         }
     }
 
