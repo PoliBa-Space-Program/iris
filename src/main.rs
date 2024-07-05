@@ -59,9 +59,8 @@ impl Types {
 
 struct Field {
     name: String,
-    wire_type: Types,
-    array: Option<u32>,
-    size: u32
+    f_type: Types,
+    array: Option<u32>
 }
 
 impl Field {
@@ -71,10 +70,10 @@ impl Field {
         out.push_str(format!("pub {}: ", self.name).as_str());
         out.push_str(match self.array {
             Some(n) => {
-                format!("[{}; {}],\n", self.wire_type.to_string(), n)
+                format!("[{}; {}],\n", self.f_type.to_string(), n)
             },
             None => {
-                format!("{},\n", self.wire_type.to_string())
+                format!("{},\n", self.f_type.to_string())
             }
         }.as_str());
 
@@ -109,12 +108,12 @@ impl Field {
 
         out.push_str(format!("{}: ", self.name).as_str());
         out.push_str(match self.array {
-            Some(n) => format!("[{}; {}]", match self.wire_type {
+            Some(n) => format!("[{}; {}]", match self.f_type {
                 Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
                 Types::BOOL => "false",
                 Types::F32 => "0.0"
             }, n),
-            None => format!("{}", match self.wire_type {
+            None => format!("{}", match self.f_type {
                 Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
                 Types::BOOL => "false",
                 Types::F32 => "0.0"
@@ -131,13 +130,13 @@ impl Field {
         match self.array {
             Some(n) => {
                 out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.wire_type.to_string(), self.wire_type.size()).as_str());
-                out.push_str(format!("index += {};\n", self.wire_type.size()).as_str());
+                out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.f_type.to_string(), self.f_type.size()).as_str());
+                out.push_str(format!("index += {};\n", self.f_type.size()).as_str());
                 out.push_str("}\n");
             },
             None => {
-                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.wire_type.to_string(), self.wire_type.size()).as_str());
-                out.push_str(format!("index += {};\n", self.wire_type.size()).as_str());
+                out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", self.name, self.f_type.to_string(), self.f_type.size()).as_str());
+                out.push_str(format!("index += {};\n", self.f_type.size()).as_str());
             }
         }
 
@@ -360,9 +359,8 @@ fn main() {
                     else {
                         s.fields.insert(name.to_string(), Field {
                             name: name.to_string(),
-                            wire_type: Types::from_str(var_type).unwrap(),
-                            array: array_size,
-                            size: Types::from_str(var_type).unwrap().size() * array_size.unwrap_or(1)
+                            f_type: Types::from_str(var_type).unwrap(),
+                            array: array_size
                         });
                         s.size += Types::from_str(var_type).unwrap().size() * array_size.unwrap_or(1);
                         s.fields_order.push(name.to_string());
