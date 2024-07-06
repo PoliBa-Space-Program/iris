@@ -134,9 +134,9 @@ It will crate `iris.hpp` file in current path.
 
 Using the flag `--out` or `-o` you can specify the output foler where the file will be created.
 ```
-cargo run file.iris --out /foo/aaaa/folder
+cargo run file.iris --out ./foo/aaaa/folder
 ```
-The file `iris.rs` will be created in `/foo/aaaa/folder`.
+The file `iris.rs` will be created in `./foo/aaaa/folder`.
 
 
 ## Examples
