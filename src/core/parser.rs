@@ -2,7 +2,41 @@ use std::{collections::HashMap, fs, io::Write, path::Path};
 
 use regex::Regex;
 
+use crate::core::generators::code_gen::CodeGen;
 use crate::core::{field::Field, package::Package, r#struct::Struct, types::Types};
+use crate::core::generators::rust;
+use crate::core::generators::python;
+use crate::core::generators::cpp;
+use crate::core::generators::c;
+
+
+enum Langs {
+    RUST(rust::Rust),
+    PYTHON(python::Python),
+    CPP(cpp::Cpp),
+    C(c::C)
+}
+
+impl Langs {
+    fn from_string(s: &str) -> Langs {
+        match s {
+            "rust" | "rs" => Langs::RUST(rust::Rust {  }),
+            "python" | "py" => Langs::PYTHON(python::Python {  }),
+            "c++" | "cpp" => Langs::CPP(cpp::Cpp {  }),
+            "c" => Langs::C(c::C {  }),
+            _ => panic!("Error, specified language is not supported.")
+        }
+    }
+
+    fn ext(&self) -> &str {
+        match self {
+            Langs::RUST(_) => "rs",
+            Langs::PYTHON(_) => "py",
+            Langs::CPP(_) => "hpp",
+            Langs::C(_) => "h"
+        }
+    }
+}
 
 pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -119,34 +153,14 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
         }
     }
 
-    
-    let mut dist = fs::File::create("dist.rs").expect("Error while creating the file.");
-    dist.write_all(b"#![no_std]\n");
-    dist.write_all(b"pub mod iris {\n");
-
-    dist.write_all(package.gen_code().as_bytes());
-
-    dist.write(b"pub enum Structs {\n");
-    for s in package.structs.values() {
-        dist.write_all(format!("{}_{}({}::{}),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
-    }
-    dist.write_all(b"}\n");
-
-    dist.write_all(b"pub fn decode(data: &[u8]) -> Result<Structs, &str> {\n");
-    
-    dist.write_all(b"let struct_name_hash = u32::from_be_bytes(data[0..4].try_into().unwrap());\n");
-    
-    dist.write_all(b"match struct_name_hash {\n");
-    for s in package.structs.values() {
-        dist.write_all(format!("{}::{}::NAME_HASH if data.len() == {}::{}::BYTES_LENGTH => Ok(Structs::{}_{}({}::{}::decode(&data))),\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_bytes());
-    }
-    dist.write_all(b"_ => Err(\"Unknown data.\")\n");
-    dist.write_all(b"}\n");
-    
-    dist.write_all(b"}\n");
     let mut dist = fs::File::create(
         Path::new(out_path.as_str()).join(format!("iris.{}", lang.ext()))
     ).unwrap();
 
-    dist.write_all(b"}\n");
+    dist.write_all(match lang {
+        Langs::RUST(l) => l.gen_code(&package),
+        Langs::PYTHON(_) => todo!("Python code generation is not yet supported."),
+        Langs::CPP(_) => todo!("C++ code generation is not yet supported."),
+        Langs::C(_) => todo!("C code generation is not yet supported.")
+    }.as_bytes()).unwrap();
 }
