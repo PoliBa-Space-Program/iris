@@ -44,6 +44,7 @@ impl Langs {
  */
 pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
+
     
     let cnt: String = fs::read_to_string(file_path).unwrap();
     if !Path::new(out_path).is_dir() {
@@ -52,7 +53,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let lang = Langs::from_string(lang);
 
     // Regex used to match the code
-    let version_regex = Regex::new(r"^(?<version>version) +(?<number>[0-9]+\.[0-9]+\.[0-9]+) *(#.*)?$").unwrap();
+    let version_regex = Regex::new(r"^(?<version>version) +(?<number>(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)) *(#.*)?$").unwrap();
     let package_regex = Regex::new(r"^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let struct_regex = Regex::new(r"^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
     let field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
@@ -72,7 +73,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             if package.version.is_some() {
                 panic!("Version already declared.");
             }
-            
+
             let version = caps.name("number").unwrap().as_str();
             if version != VERSION {
                 panic!("The current version is {VERSION}, but the file uses {version}.");

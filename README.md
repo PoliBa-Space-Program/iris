@@ -84,7 +84,7 @@ package Something
 ## File format regex
 ### Version
 ```
-^(?<version>version) +(?<number>[0-9]+\.[0-9]+\.[0-9]+) *(#.*)?$
+^(?<version>version) +(?<number>(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)) *(#.*)?$
 ```
 ### Package
 ```
