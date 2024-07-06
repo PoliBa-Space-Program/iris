@@ -1,16 +1,17 @@
-use std::{collections::HashMap, fs, io::Write};
+use std::{collections::HashMap, fs, io::Write, path::Path};
 
 use regex::Regex;
 
 use crate::core::{field::Field, package::Package, r#struct::Struct, types::Types};
 
-pub fn parse(file_path: &String) {
-    const VERSION: &str = "0.1.0";
+pub fn parse(file_path: &String, out_path: &String, lang: &String) {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
     
-    let cnt: String = match fs::read_to_string(file_path) {
-        Ok(s) => s,
-        Err(err) => panic!("{}", err)
-    };
+    let cnt: String = fs::read_to_string(file_path).unwrap();
+    if !Path::new(out_path).is_dir() {
+        panic!("Invalid directory.")
+    }
+    let lang = Langs::from_string(lang);
 
 
     let version_regex = Regex::new(r"^(?<version>version) +(?<number>[0-9]+\.[0-9]+\.[0-9]+) *(#.*)?$").unwrap();
@@ -143,6 +144,9 @@ pub fn parse(file_path: &String) {
     dist.write_all(b"}\n");
     
     dist.write_all(b"}\n");
+    let mut dist = fs::File::create(
+        Path::new(out_path.as_str()).join(format!("iris.{}", lang.ext()))
+    ).unwrap();
 
     dist.write_all(b"}\n");
 }

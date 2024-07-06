@@ -8,12 +8,14 @@ mod core;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
+    /// .iris file to use for code generation
     src: String,
 
+    /// Directory to use for code generation output.
     #[arg(short, long, default_value_t = String::from("."))]
     out: String,
 
+    /// Language to use for code generation. Supported: rust.
     #[arg(short, long, default_value_t = String::from("rust"))]
     lang: String,
 }
@@ -21,5 +23,5 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    parse(&args.src);
+    parse(&args.src, &args.out, &args.lang);
 }
