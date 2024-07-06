@@ -1,209 +1,143 @@
 # iris
-Serialization format based on Protocol Buffers.
+Serialization format that can run everywhere.
 This format was created in order to serialize and make easier the interpretation of data received by the flight computer of a rocket.
-Instead of just implemanting Protocol Buffers for a specific platform, I decided to make some changes in order to reduce the amount of computation required.
+
+The first choice was (Protocol Buffers)[https://protobuf.dev/] (used in (gRPC)[https://grpc.io/]), but an implementation for emebedded systems was needed. In particular in Rust no std.
+
+Also, [serde](https://github.com/serde-rs/serde) was not an option because only available for Rust but I use also C++, Python and other languages depending on what is needed.
+
 The main needs are:
- - Low bandwidth usage
- - Data serialization
+ - Low bandwidth
  - Easy to encode and decode
  - Fast to encode and decode
- - Run on a STM32
+ - Run on embedded systems
 
+
+## Index
+ - [Specification](#specification)
+   - [Version](#version)
+   - [Package](#package)
+   - [Field number](#field-number)
+   - [Field order](#field-order)
+   - [Arrays](#arrays)
+   - [Supported types](#supported-types)
+   - [Comments](#comments)
+ - [File format regex](#file-format-regex)
+   - [Version](#version-1)
+   - [Package](#package-1)
+   - [Struct](#struct)
+   - [Field](#field)
+ - [Encoding](#encoding)
+ - [Usage](#usage)
+ - [Examples](#examples)
 
 ## Specification
 
 ### Version
 The version is used to manage compatibility.
-The version must be declared at the top of the file.
+The version must be declared on top of the file.
+```
+version 1.3.13
+```
 
 ### Package
 The name of the package, it will be used when generating the classes.
 The name of the package must be placed after the version.
+```
+package TheGreatesPackage_ever
+```
 
 ### Field number
-The max number of field is 2^32.
+The max number of field in a single struct is 2^32.
 
 ### Field order
-The fields are encoded in the same order as they are declared. So the first field will be the first found in the encoded bytes.
+The fields are encoded in the same order as they are declared. The first field will be the first found in the encoded bytes.
 
 ### Arrays
-Only 1-D arrays are supported, to create an N-dimensions array it's necessary to create a separated struct containing a 1-D array.
-All the arrays need to have known size at compile time. An array cannot be greater than 16KB (aribtrary limit set to avoid filling all the RAM of an embedded system).
-Because this serialization format is meant to run on embedded sysstems with limited resources, we can't use the heap (we could but the trouble in most cases is not paid off). For this reason no dynamic data structures, but the size must be known at compile time.
+Only 1-D arrays are supported.
+All the arrays need to have known size at compile time.
+Because this serialization format is meant to run on embedded systems with limited resources, we can't use the heap (we could but the trouble in most cases is not paid off). For this reason no dynamic data structures, but the size must be known at compile time.
+```
+struct A:
+    u32[11] array
+```
 
-### Default values
-By default every type is associated with a default value:
-| Type | Default |
-| --- | --- |
-| B8, B16, B32 | null bytes |
-| LEN | empty array |
 
 ### Supported types
 The supported data types are:
- - int (8-bit, 16-bit, 32-bit)
- - uint (8-bit, 16-bit, 32-bit)
- - float (32-bit)
- - bool (8-bit)
- - byte (8-bit) -> alias u8
- - enum (32-bit) -> alias i32
+| Size | Types |
+| --- | --- |
+| 1 | i8, u8, bool |
+| 2 | i16, u16 |
+| 4 | f32, i32, u32 |
 
-The wire type are:
-| ID | Name	| Used For |
-| --- | --- | --- |
-| 0 | LEN | i8[], u8[], i16[], u16[], i32[], u32[], bool[], f32[] |
-| 1 | B8 | i8, u8 |
-| 2 | B16 | i16, u16 |
-| 3 | B32 | f32, i32, u32 |
 
+### Comments
+To create a single line comment use `#`.
+```
+version 23.1.3 # This is a comment
+
+# And this is another comment
+package Something
+```
 
 ## File format regex
 ### Version
 ```
-version +[0-9]+\.[0-9]+\.[0-9]+
+^(?<version>version) +(?<number>[0-9]+\.[0-9]+\.[0-9]+) *(#.*)?$
 ```
 ### Package
 ```
-package +[_a-zA-Z][_a-zA-Z0-9]*
+^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
 ```
 ### Struct
 ```
-struct +[_a-zA-Z][_a-zA-Z0-9]*:
+^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
 ```
 ### Field
 ```
- {4}(optional +)?(i8|i16|i32|u8|u16|u32|f32|bool|byte|[_a-zA-Z][_a-zA-Z0-9]*)(\[[0-9]*\])? +[_a-zA-Z][_a-zA-Z0-9]*: +[0-9]+
+^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
 ```
 
 
 ## Encoding
 An encoded struct is composed by:
  - struct id: 32-bit hash of the struct name
- - field: field value
+ - field: MSB field value
+
+The hashing function used is [fnv-1a](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash).
+
+
+## Usage
+Clone the repository, make sure to have installed the latest version of rustc and cargo.
+
+In the folder open a terminal and type:
 ```
-B8: fixed 8-bit type
-B16: fixed 16-bit type
-B32: fixed 32-bit type
-LEN: variable length of bytes
+cargo run file.iris
 ```
+By default it will generate Rust code.
 
-## Generated code
+Using the flag `--lang` or `-l` you can specify the language to use. The supported languages are:
+| Language | Accepted values |
+| --- | --- |
+| Rust | rust, rs |
+| Python | python, py |
+| C++ | c++, cpp |
+| C | c |
 
-### Type conversion
-
-
+Example:
 ```
-version 0.1.0
-
-package Telemetry
-
-struct FlightData:
-    f32 max_altitude
-    f32 max_velocity
-    u32 computer_id
-    f32 current_altitude
-    f32[4] mesured_temperatures
+cargo run file.iris --lang cpp
 ```
+It will crate `iris.hpp` file in current path.
+
+
+Using the flag `--out` or `-o` you can specify the output foler where the file will be created.
 ```
-#![no_std]
-pub mod iris {
-    pub mod Telemetry {
-        pub struct FlightData {
-            max_altitude: f32,
-            max_velocity: f32,
-            computer_id: u32,
-            current_altitude: f32,
-            mesured_temperatures: [f32; 4]
-        }
-
-        impl FlightData {
-            pub const NAME_HASH: u32 = 6161343;
-            pub const LENGTH_BYTES: u32 = 32 + 4;
-
-            pub fn to_be_bytes(&self) -> [u8; LENGTH_BYTES] {
-                self.encode()
-            }
-            pub fn encode(&self) -> [u8; LENGTH_BYTES] {
-                let mut data: [u8; self.LENGTH_BYTES] = [0; self.LENGTH_BYTES];
-                let mut index = 0;
-
-                for x in self.NAME_HASH.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-
-                for x in self.max_altitude.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-
-                for x in self.max_velocity.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-
-                for x in self.computer_id.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-
-                for x in self.current_altitude.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-
-                for i in self.mesured_temperatures {
-                    for x in i.to_be_bytes() {
-                        data[index] = x;
-                        index += 1
-                    }
-                }
-
-                data
-            }
-            pub fn decode(&self, data: &[u8]) -> FlightData {
-                let mut out = FlightData {
-                    max_altitude: 0,
-                    max_velocity: 0,
-                    computer_id: 0,
-                    current_altitude: 0,
-                    mesured_temperatures: [0; 4]
-                };
-
-                let mut index = 4;
-                
-                out.max_altitude = f32::from_be_bytes(data[index..index+4].try_into().unwrap());
-                index += 4;
-
-                out.max_velocity = f32::from_be_bytes(data[index..index+4].try_into().unwrap());
-                index += 4;
-
-                out.computer_id = u32::from_be_bytes(data[index..index+4].try_into().unwrap());
-                index += 4;
-
-                out.current_altitude = u32::from_be_bytes(&data[index..index+4].try_into().unwrap());
-                index += 4;
-
-                for i in 0..4 {
-                    out.mesured_temperatures[i] = f32::from_be_bytes(&data[index..index+4].try_into().unwrap());
-                    index += 4;
-                }
-
-                out
-            }
-        }
-    }
-
-    enum DecodeRes {
-        Telemetry_FlightData(Telemetry::FlightData)
-    }
-
-    pub fn decode(data: &[u8]) -> Result<DecodeRes, &str> {
-        let struct_name_hash = u32::from_be_bytes(data[0..4].try_into().unwrap());
-
-        match struct_name_hash {
-            Telemetry::FlightData::NAME_HASH if data.len() == Telemetry::FlightData::BYTES_LENGTH => Ok(DecodeRes::Telemetry_FlightData(Telemetry::FlightData::decode(&data))),
-            _ => Err("Unknown data.")
-        }
-    }
-}
+cargo run file.iris --out /foo/aaaa/folder
 ```
+The file `iris.rs` will be created in `/foo/aaaa/folder`.
+
+
+## Examples
+Check the `examples` folder to see how to use the generated code.
