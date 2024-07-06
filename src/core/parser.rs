@@ -38,6 +38,10 @@ impl Langs {
     }
 }
 
+/*
+ * The parser for semplicity read line by line the source code and execute the regex.
+ * Subsequent decisions are made based on the matching regex for the given line of code.
+ */
 pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     
@@ -47,7 +51,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     }
     let lang = Langs::from_string(lang);
 
-
+    // Regex used to match the code
     let version_regex = Regex::new(r"^(?<version>version) +(?<number>[0-9]+\.[0-9]+\.[0-9]+) *(#.*)?$").unwrap();
     let package_regex = Regex::new(r"^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let struct_regex = Regex::new(r"^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
@@ -63,6 +67,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let mut in_struct = false;
     let mut struct_name = "";
     for (i, line) in cnt.lines().enumerate() {
+        // If line is a version declaration
         if let Some(caps) = version_regex.captures(line) {
             if package.version.is_some() {
                 panic!("Version already declared.");
@@ -75,6 +80,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
 
             package.version = Some(version.to_string());
         }
+        // If line is declaring the name of the package
         else if let Some(caps) = package_regex.captures(line) {
             if package.version.is_none() {
                 panic!("Version not found. Before the name declaration you must place the version used.");
@@ -86,6 +92,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             let name = caps.name("name").unwrap().as_str();
             package.name = Some(name.to_string());
         }
+        // If line is declaring the name of a struct
         else if let Some(caps) = struct_regex.captures(line) {
             if !package.is_some() {
                 panic!("Version and/or package name are/is missing.");
@@ -105,6 +112,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
                 size: 0
             });
         }
+        // If the name is declaring the field of a struct
         else if let Some(caps) = field_regex.captures(line) {
             if !package.is_some() {
                 panic!("Version and/or package name are/is missing.");
@@ -146,18 +154,20 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             }
         }
         else if let Some(_caps) = blank_line_regex.captures(line) {
-            
+            // Empty line
         }
         else {
             panic!("Error at line {}. Invalid syntax.", i + 1);
         }
     }
 
-    let mut dist = fs::File::create(
+
+    // Generate output code
+    let mut out = fs::File::create(
         Path::new(out_path.as_str()).join(format!("iris.{}", lang.ext()))
     ).unwrap();
 
-    dist.write_all(match lang {
+    out.write_all(match lang {
         Langs::RUST(l) => l.gen_code(&package),
         Langs::PYTHON(_) => todo!("Python code generation is not yet supported."),
         Langs::CPP(_) => todo!("C++ code generation is not yet supported."),

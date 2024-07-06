@@ -1,3 +1,7 @@
+/**
+ * Code generation for Rust (no std).
+ */
+
 use package::gen_code;
 
 use super::code_gen::CodeGen;

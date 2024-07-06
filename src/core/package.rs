@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use super::r#struct::Struct;
 
+/**
+ * It represents an entire file with a name and defined structs.
+ */
 pub struct Package {
     pub version: Option<String>,
     pub name: Option<String>,

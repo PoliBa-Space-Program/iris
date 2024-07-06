@@ -1,3 +1,13 @@
+/*
+ * Supported types:
+ * Ux -> unsigned int x-bits
+ * Ix -> signed int x-bits
+ * BOOL -> boolean
+ * F32 -> float
+ * F64 -> double
+ * LEN -> other structs
+ */
+
 pub enum Types {
     U8,
     I8,
@@ -24,6 +34,7 @@ impl Types {
         }
     }
 
+    /// Returns type size in bytes.
     pub fn size(&self) -> u32 {
         match self {
             Types::U8 | Types::I8 | Types::BOOL => 1,
