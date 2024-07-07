@@ -56,8 +56,10 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let version_regex = Regex::new(r"^(?<version>version) +(?<number>(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)) *(#.*)?$").unwrap();
     let package_regex = Regex::new(r"^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let struct_regex = Regex::new(r"^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
-    let field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool|[_a-zA-Z][_a-zA-Z0-9]*)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
+    let struct_field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool|[_a-zA-Z][_a-zA-Z0-9]*)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let blank_line_regex = Regex::new(r"^\s*(#.*)?$").unwrap();
+    let enum_regex = Regex::new(r"^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
+    let enum_field_regex = Regex::new(r"^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*): [+-]?[0-9]+ *(#.*)?$").unwrap();
 
     let mut package = Package {
         version: None,
@@ -113,7 +115,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             });
         }
         // If the name is declaring the field of a struct
-        else if let Some(caps) = field_regex.captures(line) {
+        else if let Some(caps) = struct_field_regex.captures(line) {
             if !package.is_some() {
                 panic!("Version and/or package name are/is missing.");
             }

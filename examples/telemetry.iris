@@ -2,16 +2,13 @@ version 1.1.0 # dwaihdwa
 
 package Telemetry
 
+
+enum Status:
+    ACTIVE: 0
+    IDLE: 1
+    SLEEP: 2
+    LAND: 3
+    FLIGHT: 4
+
 struct FlightData:
-    FlightComputer[2] computers
-
-struct FlightComputer:
-    Sensor sensor
-    Battery[2] batteries
-
-struct Battery:
-    f32 charge
-
-struct Sensor:
-    f32 value
-    bool active
+    Status computer_status

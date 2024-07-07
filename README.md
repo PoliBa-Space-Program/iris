@@ -98,6 +98,14 @@ package Something
 ```
 ^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
 ```
+### Enum
+```
+^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
+```
+### Enum field
+```
+^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*): [+-]?[0-9]+ *(#.*)?$
+```
 
 
 ## Encoding
