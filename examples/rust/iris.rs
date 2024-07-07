@@ -1,83 +1,9 @@
 #![no_std]
 pub mod iris {
     pub mod Telemetry {
-        pub struct FlightData {
-            pub max_altitude: f32,
-            pub max_velocity: f32,
-            pub computers: [FlightComputer; 5],
-            pub current_altitude: f32,
-            pub mesured_temperatures: [f32; 4],
-        }
-        impl FlightData {
-            pub const NAME_HASH: u32 = 61427819;
-            pub const BYTES_LENGTH: usize = 48 + 4;
-            pub fn encode(&self) -> [u8; FlightData::BYTES_LENGTH] {
-                let mut data: [u8; FlightData::BYTES_LENGTH] = [0; FlightData::BYTES_LENGTH];
-                let mut index = 0;
-                for x in u32::to_be_bytes(FlightData::NAME_HASH) {
-                    data[index] = x;
-                    index += 1;
-                }
-                for x in self.max_altitude.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-                for x in self.max_velocity.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-                for i in self.computers {
-                    for x in i.to_be_bytes() {
-                        data[index] = x;
-                        index += 1;
-                    }
-                }
-                for x in self.current_altitude.to_be_bytes() {
-                    data[index] = x;
-                    index += 1;
-                }
-                for i in self.mesured_temperatures {
-                    for x in i.to_be_bytes() {
-                        data[index] = x;
-                        index += 1;
-                    }
-                }
-                data
-            }
-            pub fn to_be_bytes(&self) -> [u8; FlightData::BYTES_LENGTH] {
-                self.encode()
-            }
-            pub fn decode(data: &[u8]) -> FlightData {
-                let mut out = FlightData {
-                    max_altitude: 0.0,
-                    max_velocity: 0.0,
-                    computers: [FlightComputer { id: 0 }; 5],
-                    current_altitude: 0.0,
-                    mesured_temperatures: [0.0; 4],
-                };
-                let mut index = 4;
-                out.max_altitude = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
-                index += 4;
-                out.max_velocity = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
-                index += 4;
-                for i in 0..5 {
-                    out.computers[i] =
-                        FlightComputer::from_be_bytes(data[index..index + 4].try_into().unwrap());
-                    index += 4;
-                }
-                out.current_altitude =
-                    f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
-                index += 4;
-                for i in 0..4 {
-                    out.mesured_temperatures[i] =
-                        f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
-                    index += 4;
-                }
-                out
-            }
-        }
+        #[derive(Copy, Clone)]
         pub struct FlightComputer {
-            pub id: u32,
+            pub sensor: Sensor,
         }
         impl FlightComputer {
             pub const NAME_HASH: u32 = 3212217306;
@@ -90,31 +16,141 @@ pub mod iris {
                     data[index] = x;
                     index += 1;
                 }
-                for x in self.id.to_be_bytes() {
+                for x in self.to_be_bytes() {
                     data[index] = x;
                     index += 1;
                 }
                 data
             }
-            pub fn to_be_bytes(&self) -> [u8; FlightComputer::BYTES_LENGTH] {
-                self.encode()
+            pub fn to_be_bytes(&self) -> [u8; FlightComputer::BYTES_LENGTH - 4] {
+                let mut data: [u8; FlightComputer::BYTES_LENGTH - 4] =
+                    [0; FlightComputer::BYTES_LENGTH - 4];
+                let mut index = 0;
+                for x in self.sensor.to_be_bytes() {
+                    data[index] = x;
+                    index += 1;
+                }
+                data
             }
             pub fn decode(data: &[u8]) -> FlightComputer {
-                let mut out = FlightComputer { id: 0 };
-                let mut index = 4;
-                out.id = u32::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                FlightComputer::from_be_bytes(data[4..data.len()].try_into().unwrap())
+            }
+            pub fn from_be_bytes(data: [u8; FlightComputer::BYTES_LENGTH - 4]) -> FlightComputer {
+                let mut out = FlightComputer {
+                    sensor: Sensor { value: 0.0 },
+                };
+                let mut index = 0;
+                out.sensor = Sensor::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                index += 4;
+                out
+            }
+        }
+        #[derive(Copy, Clone)]
+        pub struct FlightData {
+            pub computers: [FlightComputer; 5],
+        }
+        impl FlightData {
+            pub const NAME_HASH: u32 = 61427819;
+            pub const BYTES_LENGTH: usize = 20 + 4;
+            pub fn encode(&self) -> [u8; FlightData::BYTES_LENGTH] {
+                let mut data: [u8; FlightData::BYTES_LENGTH] = [0; FlightData::BYTES_LENGTH];
+                let mut index = 0;
+                for x in u32::to_be_bytes(FlightData::NAME_HASH) {
+                    data[index] = x;
+                    index += 1;
+                }
+                for x in self.to_be_bytes() {
+                    data[index] = x;
+                    index += 1;
+                }
+                data
+            }
+            pub fn to_be_bytes(&self) -> [u8; FlightData::BYTES_LENGTH - 4] {
+                let mut data: [u8; FlightData::BYTES_LENGTH - 4] =
+                    [0; FlightData::BYTES_LENGTH - 4];
+                let mut index = 0;
+                for i in self.computers {
+                    for x in i.to_be_bytes() {
+                        data[index] = x;
+                        index += 1;
+                    }
+                }
+                data
+            }
+            pub fn decode(data: &[u8]) -> FlightData {
+                FlightData::from_be_bytes(data[4..data.len()].try_into().unwrap())
+            }
+            pub fn from_be_bytes(data: [u8; FlightData::BYTES_LENGTH - 4]) -> FlightData {
+                let mut out = FlightData {
+                    computers: [FlightComputer {
+                        sensor: Sensor { value: 0.0 },
+                    }; 5],
+                };
+                let mut index = 0;
+                for i in 0..5 {
+                    out.computers[i] =
+                        FlightComputer::from_be_bytes(data[index..index + 4].try_into().unwrap());
+                    index += 4;
+                }
+                out
+            }
+        }
+        #[derive(Copy, Clone)]
+        pub struct Sensor {
+            pub value: f32,
+        }
+        impl Sensor {
+            pub const NAME_HASH: u32 = 3385438363;
+            pub const BYTES_LENGTH: usize = 4 + 4;
+            pub fn encode(&self) -> [u8; Sensor::BYTES_LENGTH] {
+                let mut data: [u8; Sensor::BYTES_LENGTH] = [0; Sensor::BYTES_LENGTH];
+                let mut index = 0;
+                for x in u32::to_be_bytes(Sensor::NAME_HASH) {
+                    data[index] = x;
+                    index += 1;
+                }
+                for x in self.to_be_bytes() {
+                    data[index] = x;
+                    index += 1;
+                }
+                data
+            }
+            pub fn to_be_bytes(&self) -> [u8; Sensor::BYTES_LENGTH - 4] {
+                let mut data: [u8; Sensor::BYTES_LENGTH - 4] = [0; Sensor::BYTES_LENGTH - 4];
+                let mut index = 0;
+                for x in self.value.to_be_bytes() {
+                    data[index] = x;
+                    index += 1;
+                }
+                data
+            }
+            pub fn decode(data: &[u8]) -> Sensor {
+                Sensor::from_be_bytes(data[4..data.len()].try_into().unwrap())
+            }
+            pub fn from_be_bytes(data: [u8; Sensor::BYTES_LENGTH - 4]) -> Sensor {
+                let mut out = Sensor { value: 0.0 };
+                let mut index = 0;
+                out.value = f32::from_be_bytes(data[index..index + 4].try_into().unwrap());
                 index += 4;
                 out
             }
         }
     }
     pub enum Structs {
-        Telemetry_FlightData(Telemetry::FlightData),
         Telemetry_FlightComputer(Telemetry::FlightComputer),
+        Telemetry_FlightData(Telemetry::FlightData),
+        Telemetry_Sensor(Telemetry::Sensor),
     }
     pub fn decode(data: &[u8]) -> Result<Structs, &str> {
         let struct_name_hash = u32::from_be_bytes(data[0..4].try_into().unwrap());
         match struct_name_hash {
+            Telemetry::FlightComputer::NAME_HASH
+                if data.len() == Telemetry::FlightComputer::BYTES_LENGTH =>
+            {
+                Ok(Structs::Telemetry_FlightComputer(
+                    Telemetry::FlightComputer::decode(&data),
+                ))
+            }
             Telemetry::FlightData::NAME_HASH
                 if data.len() == Telemetry::FlightData::BYTES_LENGTH =>
             {
@@ -122,12 +158,8 @@ pub mod iris {
                     Telemetry::FlightData::decode(&data),
                 ))
             }
-            Telemetry::FlightComputer::NAME_HASH
-                if data.len() == Telemetry::FlightComputer::BYTES_LENGTH =>
-            {
-                Ok(Structs::Telemetry_FlightComputer(
-                    Telemetry::FlightComputer::decode(&data),
-                ))
+            Telemetry::Sensor::NAME_HASH if data.len() == Telemetry::Sensor::BYTES_LENGTH => {
+                Ok(Structs::Telemetry_Sensor(Telemetry::Sensor::decode(&data)))
             }
             _ => Err("Unknown data."),
         }

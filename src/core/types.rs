@@ -51,6 +51,7 @@ impl Types<'_> {
         }
     }
 
+    /*
     pub fn to_string(&self) -> String {
         match self {
             Types::U8 => String::from("u8"),
@@ -64,4 +65,5 @@ impl Types<'_> {
             Types::LEN(s) => s.name.clone()
         }
     }
+    */
 }
