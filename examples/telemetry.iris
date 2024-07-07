@@ -3,10 +3,15 @@ version 1.0.0 # dwaihdwa
 package Telemetry
 
 struct FlightData:
-    FlightComputer[5] computers
+    FlightComputer[2] computers
 
 struct FlightComputer:
     Sensor sensor
+    Battery[2] batteries
+
+struct Battery:
+    f32 charge
 
 struct Sensor:
     f32 value
+    bool active
