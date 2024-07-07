@@ -6,7 +6,7 @@ use package::gen_code;
 
 use super::code_gen::CodeGen;
 
-
+pub mod types;
 pub mod field;
 pub mod r#struct;
 pub mod package;

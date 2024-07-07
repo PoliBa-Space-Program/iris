@@ -1,5 +1,7 @@
 use crate::core::{field::Field, package::Package, types::Types};
 
+use super::types::gen_default_value;
+
 pub fn gen_declaration(field: &Field) -> String {
     let mut out = String::new();
 
@@ -44,18 +46,8 @@ pub fn gen_default(field: &Field, package: &Package) -> String {
 
     out.push_str(format!("{}: ", field.name).as_str());
     out.push_str(match field.array {
-        Some(n) => format!("[{}; {}]", match Types::from_str(field.type_name.as_str(), package).unwrap() {
-            Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
-            Types::BOOL => "false",
-            Types::F32 => "0.0",
-            Types::LEN(s) => ""
-        }, n),
-        None => format!("{}", match Types::from_str(field.type_name.as_str(), package).unwrap() {
-            Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
-            Types::BOOL => "false",
-            Types::F32 => "0.0",
-            Types::LEN(s) => ""
-        })
+        Some(n) => format!("[{}; {}]", gen_default_value(&Types::from_str(field.type_name.as_str(), package).unwrap(), package), n),
+        None => format!("{}", gen_default_value(&Types::from_str(field.type_name.as_str(), package).unwrap(), package))
     }.as_str());
     out.push_str(",\n");
 
