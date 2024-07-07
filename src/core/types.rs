@@ -8,7 +8,10 @@
  * LEN -> other structs
  */
 
-pub enum Types {
+use super::{package::Package, r#struct::Struct};
+
+
+pub enum Types<'a> {
     U8,
     I8,
     BOOL,
@@ -16,11 +19,12 @@ pub enum Types {
     I16,
     U32,
     I32,
-    F32
+    F32,
+    LEN(&'a Struct)
 }
 
-impl Types {
-    pub fn from_str(s: &str) -> Result<Types, &str> {
+impl Types<'_> {
+    pub fn from_str<'a>(s: &'a str, package: &'a Package) -> Result<Types<'a>, &'a str> {
         match s {
             "u8" => Ok(Types::U8),
             "i8" => Ok(Types::I8),
@@ -30,16 +34,20 @@ impl Types {
             "u32" => Ok(Types::U32),
             "i32" => Ok(Types::I32),
             "f32" => Ok(Types::F32),
-            _ => Err("No compatible type found.")
+            _ => match package.structs.get(s) {
+                Some(v) => Ok(Types::LEN(v)),
+                None => Err("No compatible type found.")
+            }
         }
     }
 
     /// Returns type size in bytes.
-    pub fn size(&self) -> u32 {
+    pub fn size(&self, package: &Package) -> u32 {
         match self {
             Types::U8 | Types::I8 | Types::BOOL => 1,
             Types::U16 | Types::I16 => 2,
-            Types::U32 | Types::I32 | Types::F32 => 4
+            Types::U32 | Types::I32 | Types::F32 => 4,
+            Types::LEN(s) => s.size(package)
         }
     }
 
@@ -52,7 +60,8 @@ impl Types {
             Types::I16 => String::from("i16"),
             Types::U32 => String::from("u32"),
             Types::I32 => String::from("i32"),
-            Types::F32 => String::from("f32")
+            Types::F32 => String::from("f32"),
+            Types::LEN(s) => s.name.clone()
         }
     }
 }

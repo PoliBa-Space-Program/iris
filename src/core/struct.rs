@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::field::Field;
+use super::{field::Field, package::Package};
 
 /**
  * It's like a normal C-like struct but without methods.
@@ -8,8 +8,7 @@ use super::field::Field;
 pub struct Struct {
     pub name: String,
     pub fields: HashMap<String, Field>,
-    pub fields_order: Vec<String>,
-    pub size: u32
+    pub fields_order: Vec<String>
 }
 
 impl Struct {
@@ -28,5 +27,15 @@ impl Struct {
         }
 
         hash
+    }
+
+    pub fn size(&self, package: &Package) -> u32 {
+        let mut counter = 0;
+
+        for f in self.fields.values() {
+            counter += f.size(package);
+        }
+
+        counter
     }
 }

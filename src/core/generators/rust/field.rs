@@ -1,4 +1,4 @@
-use crate::core::{field::Field, types::Types};
+use crate::core::{field::Field, package::Package, types::Types};
 
 pub fn gen_declaration(field: &Field) -> String {
     let mut out = String::new();
@@ -6,10 +6,10 @@ pub fn gen_declaration(field: &Field) -> String {
     out.push_str(format!("pub {}: ", field.name).as_str());
     out.push_str(match field.array {
         Some(n) => {
-            format!("[{}; {}],\n", field.f_type.to_string(), n)
+            format!("[{}; {}],\n", field.type_name, n)
         },
         None => {
-            format!("{},\n", field.f_type.to_string())
+            format!("{},\n", field.type_name)
         }
     }.as_str());
 
@@ -39,20 +39,22 @@ pub fn gen_encode(field: &Field) -> String {
     out
 }
 
-pub fn gen_default(field: &Field) -> String {
+pub fn gen_default(field: &Field, package: &Package) -> String {
     let mut out = String::new();
 
     out.push_str(format!("{}: ", field.name).as_str());
     out.push_str(match field.array {
-        Some(n) => format!("[{}; {}]", match field.f_type {
+        Some(n) => format!("[{}; {}]", match Types::from_str(field.type_name.as_str(), package).unwrap() {
             Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
             Types::BOOL => "false",
-            Types::F32 => "0.0"
+            Types::F32 => "0.0",
+            Types::LEN(s) => ""
         }, n),
-        None => format!("{}", match field.f_type {
+        None => format!("{}", match Types::from_str(field.type_name.as_str(), package).unwrap() {
             Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => "0",
             Types::BOOL => "false",
-            Types::F32 => "0.0"
+            Types::F32 => "0.0",
+            Types::LEN(s) => ""
         })
     }.as_str());
     out.push_str(",\n");
@@ -60,19 +62,19 @@ pub fn gen_default(field: &Field) -> String {
     out
 }
 
-pub fn gen_from_bytes(field: &Field) -> String {
+pub fn gen_from_bytes(field: &Field, package: &Package) -> String {
     let mut out = String::new();
 
     match field.array {
         Some(n) => {
             out.push_str(format!("for i in 0..{} {{\n", n).as_str());
-            out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", field.name, field.f_type.to_string(), field.f_type.size()).as_str());
-            out.push_str(format!("index += {};\n", field.f_type.size()).as_str());
+            out.push_str(format!("out.{}[i] = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", field.name, field.type_name, field.size(package) / n).as_str());
+            out.push_str(format!("index += {};\n", field.size(package) / n).as_str());
             out.push_str("}\n");
         },
         None => {
-            out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", field.name, field.f_type.to_string(), field.f_type.size()).as_str());
-            out.push_str(format!("index += {};\n", field.f_type.size()).as_str());
+            out.push_str(format!("out.{} = {}::from_be_bytes(data[index..index+{}].try_into().unwrap());\n", field.name, field.type_name, field.size(package)).as_str());
+            out.push_str(format!("index += {};\n", field.size(package)).as_str());
         }
     }
 

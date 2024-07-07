@@ -56,7 +56,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let version_regex = Regex::new(r"^(?<version>version) +(?<number>(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)) *(#.*)?$").unwrap();
     let package_regex = Regex::new(r"^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let struct_regex = Regex::new(r"^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
-    let field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
+    let field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool|[_a-zA-Z][_a-zA-Z0-9]*)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let blank_line_regex = Regex::new(r"^\s*(#.*)?$").unwrap();
 
     let mut package = Package {
@@ -109,8 +109,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             package.structs.insert(name.to_string(), Struct {
                 name: name.to_string(),
                 fields: HashMap::new(),
-                fields_order: Vec::new(),
-                size: 0
+                fields_order: Vec::new()
             });
         }
         // If the name is declaring the field of a struct
@@ -144,10 +143,9 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
                     else {
                         s.fields.insert(name.to_string(), Field {
                             name: name.to_string(),
-                            f_type: Types::from_str(var_type).unwrap(),
+                            type_name: var_type.to_string(),
                             array: array_size
                         });
-                        s.size += Types::from_str(var_type).unwrap().size() * array_size.unwrap_or(1);
                         s.fields_order.push(name.to_string());
                     }
                 },

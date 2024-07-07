@@ -5,6 +5,9 @@ package Telemetry
 struct FlightData:
     f32 max_altitude
     f32 max_velocity
-    u8 computer_id
+    FlightComputer computer
     f32 current_altitude
     f32[4] mesured_temperatures
+
+struct FlightComputer:
+    u32 id

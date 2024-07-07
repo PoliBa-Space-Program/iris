@@ -1,8 +1,8 @@
-use crate::core::r#struct::Struct;
+use crate::core::{package::Package, r#struct::Struct};
 
 use super::field::{gen_declaration, gen_default, gen_encode, gen_from_bytes};
 
-pub fn gen_code(strc: &Struct) -> String {
+pub fn gen_code(strc: &Struct, package: &Package) -> String {
     let mut out = String::new();
 
     out.push_str(format!("pub struct {} {{\n", strc.name).as_str());
@@ -14,7 +14,7 @@ pub fn gen_code(strc: &Struct) -> String {
     out.push_str(format!("impl {} {{\n", strc.name).as_str());
 
     out.push_str(format!("pub const NAME_HASH: u32 = {};\n", strc.fnv_1a()).as_str());
-    out.push_str(format!("pub const BYTES_LENGTH: usize = {} + 4;\n", strc.size).as_str());
+    out.push_str(format!("pub const BYTES_LENGTH: usize = {} + 4;\n", strc.size(package)).as_str());
     
     out.push_str(format!("pub fn encode(&self) -> [u8; {}::BYTES_LENGTH] {{\n", strc.name).as_str());
 
@@ -42,14 +42,14 @@ pub fn gen_code(strc: &Struct) -> String {
     
     out.push_str(format!("let mut out = {} {{\n", strc.name).as_str());
     for f in &strc.fields_order {
-        out.push_str(gen_default(strc.fields.get(f).unwrap()).as_str());
+        out.push_str(gen_default(strc.fields.get(f).unwrap(), package).as_str());
     }
     out.push_str("};\n");
 
     out.push_str("let mut index = 4;\n");
 
     for f in &strc.fields_order {
-        out.push_str(gen_from_bytes(strc.fields.get(f).unwrap()).as_str());
+        out.push_str(gen_from_bytes(strc.fields.get(f).unwrap(), package).as_str());
     }
 
     out.push_str("out\n");
