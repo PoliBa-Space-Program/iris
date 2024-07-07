@@ -2,7 +2,7 @@
 Serialization format that can run everywhere.
 This format was created in order to serialize and make easier the interpretation of data received by the flight computer of a rocket.
 
-The first choice was (Protocol Buffers)[https://protobuf.dev/] (used in (gRPC)[https://grpc.io/]), but an implementation for emebedded systems was needed. In particular in Rust no std.
+The first choice was [Protocol Buffers](https://protobuf.dev/) (used in [gRPC](https://grpc.io/)), but an implementation for emebedded systems was needed. In particular in Rust no std.
 
 Also, [serde](https://github.com/serde-rs/serde) was not an option because only available for Rust but I use also C++, Python and other languages depending on what is needed.
 
@@ -26,7 +26,7 @@ The main needs are:
    - [Version](#version-1)
    - [Package](#package-1)
    - [Struct](#struct)
-   - [Field](#field)
+   - [Struct field](#struct-field)
  - [Encoding](#encoding)
  - [Usage](#usage)
  - [Examples](#examples)
@@ -94,7 +94,7 @@ package Something
 ```
 ^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
 ```
-### Field
+### Struct field
 ```
 ^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
 ```
