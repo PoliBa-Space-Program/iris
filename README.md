@@ -104,7 +104,7 @@ package Something
 ```
 ### Enum field
 ```
-^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*): [+-]?[0-9]+ *(#.*)?$
+^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$
 ```
 
 
@@ -156,3 +156,4 @@ Next things to do:
  - imports
  - N-dimensions arrays
  - Extend code generation to other languages (Python, C++, C)
+ - random access

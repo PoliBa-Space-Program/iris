@@ -1,4 +1,4 @@
-use crate::core::{package::Package, r#struct::Struct};
+use crate::core::{package::Package, structure::Struct};
 
 use super::field::{gen_declaration, gen_default, gen_encode, gen_from_bytes};
 

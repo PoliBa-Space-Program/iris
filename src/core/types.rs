@@ -6,9 +6,10 @@
  * F32 -> float
  * F64 -> double
  * LEN -> other structs
+ * ENUM -> enum is a u32
  */
 
-use super::{package::Package, r#struct::Struct};
+use super::{package::Package, structure::Struct};
 
 
 pub enum Types<'a> {

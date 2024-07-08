@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, io::Write, path::Path};
 use regex::Regex;
 
 use crate::core::generators::code_gen::CodeGen;
-use crate::core::{field::Field, package::Package, r#struct::Struct};
+use crate::core::{field::Field, package::Package, structure::Struct};
 use crate::core::generators::rust;
 use crate::core::generators::python;
 use crate::core::generators::cpp;
