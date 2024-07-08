@@ -2,6 +2,7 @@ use std::{collections::HashMap, fs, io::Write, path::Path};
 
 use regex::Regex;
 
+use crate::core::enumeration::{Enum, Variant};
 use crate::core::generators::code_gen::CodeGen;
 use crate::core::{field::Field, package::Package, structure::Struct};
 use crate::core::generators::rust;
@@ -59,16 +60,19 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let struct_field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool|[_a-zA-Z][_a-zA-Z0-9]*)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let blank_line_regex = Regex::new(r"^\s*(#.*)?$").unwrap();
     let enum_regex = Regex::new(r"^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
-    let enum_field_regex = Regex::new(r"^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*): [+-]?[0-9]+ *(#.*)?$").unwrap();
+    let enum_field_regex = Regex::new(r"^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$").unwrap();
 
     let mut package = Package {
         version: None,
         name: None,
-        structs: HashMap::new()
+        structs: HashMap::new(),
+        enums: HashMap::new()
     };
 
     let mut in_struct = false;
     let mut struct_name = "";
+    let mut in_enum = false;
+    let mut enum_name = "";
     for (i, line) in cnt.lines().enumerate() {
         // If line is a version declaration
         if let Some(caps) = version_regex.captures(line) {
@@ -152,6 +156,66 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
                     }
                 },
                 None => panic!("Error at line {}. Struct named `{}` not found.", i + 1, struct_name)
+            }
+        }
+        // If the line is declaring an enum
+        else if let Some(caps) = enum_regex.captures(line) {
+            if !package.is_some() {
+                panic!("Version and/or package name are/is missing.");
+            }
+
+            let name = caps.name("name").unwrap().as_str();
+            if package.enums.contains_key(name) {
+                panic!("Error at line {}. An enum with the name '{name}' already exists.", i + 1);
+            }
+
+            in_enum = true;
+            enum_name = name;
+            package.enums.insert(name.to_string(), Enum {
+                name: name.to_string(),
+                variants: HashMap::new(),
+                variants_order: Vec::new(),
+                counter: 0
+            });
+        }
+        // If the line is declaring the variant of an enum
+        else if let Some(caps) = enum_field_regex.captures(line) {
+            if !package.is_some() {
+                panic!("Version and/or package name are/is missing.");
+            }
+            if !in_enum {
+                panic!("Syntax error at line {}. Variant declared outside an enum.", i + 1);
+            }
+
+            let name = caps.name("name").unwrap().as_str();
+            let mut value: Option<u32> = match caps.name("value") {
+                Some(g) => {
+                    match g.as_str().parse() {
+                        Ok(n) => Some(n),
+                        Err(_) => panic!("Error at line {}. Invalid variant value.", i + 1)
+                    }
+                },
+                None => None
+            };
+            if value.is_none() {
+                value = Some(package.enums.get(enum_name).unwrap().counter);
+                package.enums.get_mut(enum_name).unwrap().counter += 1
+            }
+
+            match package.enums.get_mut(enum_name) {
+                Some(e) => {
+                    if e.variants.contains_key(&name.to_string()) {
+                        panic!("Error at line {}. A variant named `{}` already exists in the enumeration.", i + 1, name);
+                    }
+                    else {
+                        e.variants.insert(name.to_string(), Variant {
+                            name: name.to_string(),
+                            value: value.unwrap()
+                        });
+                        e.variants_order.push(name.to_string());
+                    }
+                },
+                None => panic!("Error at line {}. Enum name `{}` not found.", i + 1, enum_name)
             }
         }
         else if let Some(_caps) = blank_line_regex.captures(line) {

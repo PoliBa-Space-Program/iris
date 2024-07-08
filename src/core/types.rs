@@ -9,7 +9,7 @@
  * ENUM -> enum is a u32
  */
 
-use super::{package::Package, structure::Struct};
+use super::{enumeration::Enum, package::Package, structure::Struct};
 
 
 pub enum Types<'a> {
@@ -21,7 +21,8 @@ pub enum Types<'a> {
     U32,
     I32,
     F32,
-    LEN(&'a Struct)
+    LEN(&'a Struct),
+    ENUM(&'a Enum)
 }
 
 impl Types<'_> {
@@ -37,7 +38,14 @@ impl Types<'_> {
             "f32" => Ok(Types::F32),
             _ => match package.structs.get(s) {
                 Some(v) => Ok(Types::LEN(v)),
-                None => Err("No compatible type found.")
+                None => {
+                    match package.enums.get(s) {
+                        Some(e) => {
+                            Ok(Types::ENUM(e))
+                        },
+                        None => Err("No compatible type found.")
+                    }
+                }
             }
         }
     }
@@ -48,7 +56,8 @@ impl Types<'_> {
             Types::U8 | Types::I8 | Types::BOOL => 1,
             Types::U16 | Types::I16 => 2,
             Types::U32 | Types::I32 | Types::F32 => 4,
-            Types::LEN(s) => s.size(package)
+            Types::LEN(s) => s.size(package),
+            Types::ENUM(e) => e.size()
         }
     }
 
@@ -63,7 +72,8 @@ impl Types<'_> {
             Types::U32 => String::from("u32"),
             Types::I32 => String::from("i32"),
             Types::F32 => String::from("f32"),
-            Types::LEN(s) => s.name.clone()
+            Types::LEN(s) => s.name.clone(),
+            Types::ENUM(e) => s.name.clone()
         }
     }
     */

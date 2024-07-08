@@ -10,5 +10,6 @@ enum Status:
     LAND: 3
     FLIGHT: 4
 
-struct FlightData:
-    Status computer_status
+struct Data:
+    u32 computer_id
+    Status status

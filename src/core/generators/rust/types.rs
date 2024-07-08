@@ -17,6 +17,7 @@ pub fn gen_default_value(r#type: &Types, package: &Package) -> String {
             out.push_str("}\n");
 
             out
-        }
+        },
+        Types::ENUM(_e) => String::from("0")
     }
 }

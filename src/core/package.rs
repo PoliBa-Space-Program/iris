@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::structure::Struct;
+use super::{enumeration::Enum, structure::Struct};
 
 /**
  * It represents an entire file with a name and defined structs.
@@ -8,7 +8,8 @@ use super::structure::Struct;
 pub struct Package {
     pub version: Option<String>,
     pub name: Option<String>,
-    pub structs: HashMap<String, Struct>
+    pub structs: HashMap<String, Struct>,
+    pub enums: HashMap<String, Enum>
 }
 
 impl Package {
