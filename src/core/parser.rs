@@ -60,7 +60,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
     let struct_field_regex = Regex::new(r"^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool|[_a-zA-Z][_a-zA-Z0-9]*)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$").unwrap();
     let blank_line_regex = Regex::new(r"^\s*(#.*)?$").unwrap();
     let enum_regex = Regex::new(r"^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$").unwrap();
-    let enum_field_regex = Regex::new(r"^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$").unwrap();
+    let enum_variant_regex = Regex::new(r"^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$").unwrap();
 
     let mut package = Package {
         version: None,
@@ -112,6 +112,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
 
             in_struct = true;
             struct_name = name;
+            in_enum = false;
             package.structs.insert(name.to_string(), Struct {
                 name: name.to_string(),
                 fields: HashMap::new(),
@@ -123,7 +124,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             if !package.is_some() {
                 panic!("Version and/or package name are/is missing.");
             }
-            if !in_struct {
+            if !in_struct || in_enum {
                 panic!("Syntax error at line {}. Field declared outside a struct.", i + 1);
             }
 
@@ -171,6 +172,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
 
             in_enum = true;
             enum_name = name;
+            in_struct = false;
             package.enums.insert(name.to_string(), Enum {
                 name: name.to_string(),
                 variants: HashMap::new(),
@@ -179,27 +181,29 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
             });
         }
         // If the line is declaring the variant of an enum
-        else if let Some(caps) = enum_field_regex.captures(line) {
+        else if let Some(caps) = enum_variant_regex.captures(line) {
             if !package.is_some() {
                 panic!("Version and/or package name are/is missing.");
             }
-            if !in_enum {
+            if !in_enum || in_struct {
                 panic!("Syntax error at line {}. Variant declared outside an enum.", i + 1);
             }
 
             let name = caps.name("name").unwrap().as_str();
-            let mut value: Option<u32> = match caps.name("value") {
+            let value: u32 = match caps.name("value") {
                 Some(g) => {
                     match g.as_str().parse() {
-                        Ok(n) => Some(n),
+                        Ok(n) => {
+                            package.enums.get_mut(enum_name).unwrap().counter = n + 1;
+                            n
+                        },
                         Err(_) => panic!("Error at line {}. Invalid variant value.", i + 1)
                     }
                 },
-                None => None
+                None => package.enums.get(enum_name).unwrap().counter
             };
-            if value.is_none() {
-                value = Some(package.enums.get(enum_name).unwrap().counter);
-                package.enums.get_mut(enum_name).unwrap().counter += 1
+            if value == package.enums.get(enum_name).unwrap().counter {
+                package.enums.get_mut(enum_name).unwrap().counter += 1;
             }
 
             match package.enums.get_mut(enum_name) {
@@ -210,7 +214,7 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
                     else {
                         e.variants.insert(name.to_string(), Variant {
                             name: name.to_string(),
-                            value: value.unwrap()
+                            value
                         });
                         e.variants_order.push(name.to_string());
                     }
@@ -223,6 +227,12 @@ pub fn parse(file_path: &String, out_path: &String, lang: &String) {
         }
         else {
             panic!("Error at line {}. Invalid syntax.", i + 1);
+        }
+
+        if !in_enum && enum_name != "" {
+            if package.enums.get(enum_name).unwrap().variants.len() == 0 {
+                panic!("Enum `{enum_name}` has no variants.");
+            }
         }
     }
 

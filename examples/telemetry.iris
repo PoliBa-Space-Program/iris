@@ -1,15 +1,8 @@
 version 1.1.0 # dwaihdwa
 
-package Telemetry
-
-
-enum Status:
-    ACTIVE: 0
-    IDLE: 1
-    SLEEP: 2
-    LAND: 3
-    FLIGHT: 4
+package Structs
 
 struct Data:
-    u32 computer_id
-    Status status
+
+enum A:
+    a

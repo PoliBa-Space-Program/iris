@@ -1,6 +1,6 @@
 use crate::core::{enumeration::Enum, package::Package};
 
-pub fn gen_code(enmn: &Enum, package: &Package) -> String {
+pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
     let mut out = String::new();
 
     out.push_str("#[derive(Copy, Clone)]\n");
