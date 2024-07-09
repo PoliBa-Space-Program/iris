@@ -71,7 +71,7 @@ pub mod iris {
             pub fn from_be_bytes(data: [u8; Data::BYTES_LENGTH - 4]) -> Data {
                 let mut out = Data {
                     computer_id: 0,
-                    status: 0,
+                    status: Status::ACTIVE,
                 };
                 let mut index = 0;
                 out.computer_id = u32::from_be_bytes(data[index..index + 4].try_into().unwrap());

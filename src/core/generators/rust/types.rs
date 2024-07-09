@@ -18,6 +18,6 @@ pub fn gen_default_value(r#type: &Types, package: &Package) -> String {
 
             out
         },
-        Types::ENUM(_e) => String::from("0")
+        Types::ENUM(e) => format!("{}::{}", e.name, e.variants_order.first().unwrap())
     }
 }
