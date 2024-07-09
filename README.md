@@ -27,6 +27,8 @@ The main needs are:
    - [Package](#package-1)
    - [Struct](#struct)
    - [Struct field](#struct-field)
+   - [Enum](#enum)
+   - [Enum variant](#enum-variant)
  - [Encoding](#encoding)
  - [Usage](#usage)
  - [Examples](#examples)
@@ -69,7 +71,7 @@ The supported data types are:
 | --- | --- |
 | 1 | i8, u8, bool |
 | 2 | i16, u16 |
-| 4 | f32, i32, u32 |
+| 4 | f32, i32, u32, enum |
 
 
 ### Comments
@@ -102,7 +104,7 @@ package Something
 ```
 ^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
 ```
-### Enum field
+### Enum variant
 ```
 ^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$
 ```
@@ -152,6 +154,7 @@ Check the `examples` folder to see how to use the generated code.
 
 ## To Do
 Next things to do:
+ - Parsers and generator refactoring
  - imports
  - N-dimensions arrays
  - Extend code generation to other languages (Python, C++, C)

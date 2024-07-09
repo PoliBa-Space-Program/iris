@@ -3,7 +3,7 @@ version 2.0.0 # dwaihdwa
 package Telemetry
 
 struct Data:
-    Status status
+    Status[2] status
 
 enum Status:
     SLEEP
