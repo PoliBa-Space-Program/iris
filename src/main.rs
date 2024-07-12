@@ -1,6 +1,7 @@
 use clap::Parser;
 
-use core::parser::parse;
+use core::{token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
+use std::fs;
 
 mod core;
 
@@ -23,5 +24,16 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    parse(&args.src, &args.out, &args.lang);
+
+    //parse(&args.src, &args.out, &args.lang);
+    let src = fs::read_to_string(args.src).unwrap();
+
+    let mut tokenizer = Tokenizer::new(src);
+    tokenizer.tokenize();
+
+    for t in tokenizer.tokens {
+        println!("{:?} {:?}", t.t, t.value);
+    }
+
+    
 }

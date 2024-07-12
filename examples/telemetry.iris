@@ -2,8 +2,16 @@ version 2.0.0 # dwaihdwa
 
 package Telemetry
 
+struct Battery:
+    f32 charge
+
+struct Computer:
+    u32 id
+    Battery[2] batteries
+    Status status
+
 struct Data:
-    Status[2] status
+    Computer[2] computers
 
 enum Status:
     SLEEP

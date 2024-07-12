@@ -6,3 +6,7 @@ pub mod structure;
 pub mod package;
 
 pub mod generators;
+
+// Refactoring
+pub mod token_types;
+pub mod tokenizer;

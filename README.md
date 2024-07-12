@@ -159,3 +159,5 @@ Next things to do:
  - N-dimensions arrays
  - Extend code generation to other languages (Python, C++, C)
  - random access
+
+https://medium.com/@BadFoolPrototype/writing-a-simple-code-generator-7af057c58d22
