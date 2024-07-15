@@ -44,17 +44,6 @@ impl Tokenizer {
     /// Get the next token in the input
     pub fn get_next_token(&mut self) -> Token {
         while let Some(c) = self.current_c {
-            if c == ' ' && self.peek(Some(1)).unwrap_or_default() == ' ' && self.peek(Some(2)).unwrap_or_default() == ' ' && self.peek(Some(3)).unwrap_or_default() == ' ' {
-                self.advance();
-                self.advance();
-                self.advance();
-                self.advance();
-                return Token { t: TokenTypes::Indentation, value: None, row: self.row, col: self.col };
-            }
-            if c == '\n' {
-                self.advance();
-                continue;
-            }
             if c.is_ascii_whitespace() {
                 self.skip_whitespace();
                 continue;
@@ -74,6 +63,10 @@ impl Tokenizer {
                 self.advance();
                 return Token { t: TokenTypes::Colon, value: None, row: self.row, col: self.col };
             }
+            if c == ';' {
+                self.advance();
+                return Token { t: TokenTypes::SemiColon, value: None, row: self.row, col: self.col };
+            }
             if c == '[' {
                 self.advance();
                 return Token { t: TokenTypes::OpenSquareBracket, value: None, row: self.row, col: self.col };
@@ -81,6 +74,14 @@ impl Tokenizer {
             if c == ']' {
                 self.advance();
                 return Token { t: TokenTypes::CloseSquareBracket, value: None, row: self.row, col: self.col };
+            }
+            if c == '{' {
+                self.advance();
+                return Token { t: TokenTypes::OpenCurlyBracket, value: None, row: self.row, col: self.col };
+            }
+            if c == '}' {
+                self.advance();
+                return Token { t: TokenTypes::CloseCurlyBracket, value: None, row: self.row, col: self.col };
             }
             
             self.error("Syntax error, unknown token.", 1);
@@ -91,7 +92,7 @@ impl Tokenizer {
 
     /// Exit the program with an error
     fn error(&self, msg: &str, code: u32) {
-        panic!(":{}:{} Error E{}: {}", self.row, self.col, code, msg);
+        panic!("Tokenizer:{}:{} Error E{}: {}", self.row, self.col, code, msg);
     }
 
     /// Advance to the next character and set the current character 
@@ -112,8 +113,8 @@ impl Tokenizer {
     }
 
     /// Go to the next position and return the character
-    fn peek(&self, n: Option<usize>) -> Option<char> {
-        self.src.chars().nth(self.pos + n.unwrap_or(1))
+    fn peek(&self, n: usize) -> Option<char> {
+        self.src.chars().nth(self.pos + n)
     }
 
     /// Skip whitespaces until the next token
@@ -125,14 +126,12 @@ impl Tokenizer {
 
     /// Skip the comment
     fn skip_comment(&mut self) {
-        while self.current_c != Some('\n') || self.current_c == None {
+        while self.current_c.unwrap_or_default() != '\n' {
             self.advance();
         }
-
-        self.advance();
     }
 
-    /// Return an integer or floaat token consumed from the input
+    /// Return an unsigned integer or semantic version token consumed from the input
     fn number(&mut self) -> Token {
         let num_row = self.row;
         let num_col = self.col;
@@ -160,30 +159,22 @@ impl Tokenizer {
                     buf.push(self.current_c.unwrap());
                     self.advance();
                 }
-
-                return Token {
-                    t: TokenTypes::SemanticVersion,
-                    value: Some(buf),
-                    row: num_row,
-                    col: num_col
-                };
             }
 
             return Token {
-                t: TokenTypes::Float,
+                t: TokenTypes::SemanticVersion,
                 value: Some(buf),
                 row: num_row,
                 col: num_col
             };
         }
-        else {
-            return Token {
-                t: TokenTypes::Int,
-                value: Some(buf),
-                row: num_row,
-                col: num_col
-            };
-        }
+        
+        return Token {
+            t: TokenTypes::UInt,
+            value: Some(buf),
+            row: num_row,
+            col: num_col
+        };
     }
 
     /// Return an identifier or keyword token
@@ -202,14 +193,6 @@ impl Tokenizer {
             "package" => Token { t: TokenTypes::Package, value: None, row: num_row, col: num_col },
             "struct" => Token { t: TokenTypes::Struct, value: None, row: num_row, col: num_col },
             "enum" => Token { t: TokenTypes::Enum, value: None, row: num_row, col: num_col },
-            "u8" => Token { t: TokenTypes::U8, value: None, row: num_row, col: num_col },
-            "u16" => Token { t: TokenTypes::U16, value: None, row: num_row, col: num_col },
-            "u32" => Token { t: TokenTypes::U32, value: None, row: num_row, col: num_col },
-            "i8" => Token { t: TokenTypes::I8, value: None, row: num_row, col: num_col },
-            "i16" => Token { t: TokenTypes::I16, value: None, row: num_row, col: num_col },
-            "i32" => Token { t: TokenTypes::I32, value: None, row: num_row, col: num_col },
-            "f32" => Token { t: TokenTypes::F32, value: None, row: num_row, col: num_col },
-            "bool" => Token { t: TokenTypes::Bool, value: None, row: num_row, col: num_col },
             _ => Token { t: TokenTypes::Identifier, value: Some(buf), row: num_row, col: num_col }
         }
     }

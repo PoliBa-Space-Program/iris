@@ -3,27 +3,20 @@ pub enum TokenTypes {
     Unknown,
 
     Colon,
+    SemiColon,
     OpenSquareBracket,
     CloseSquareBracket,
-    Indentation,
+    OpenCurlyBracket,
+    CloseCurlyBracket,
 
     Identifier,
-    Int,
-    Float,
+    UInt,
     SemanticVersion,
 
     Version,
     Struct,
     Enum,
     Package,
-    U8,
-    U16,
-    U32,
-    I8,
-    I16,
-    I32,
-    F32,
-    Bool,
 
     EndOfStream
 }

@@ -1,4 +1,3 @@
-pub mod parser;
 pub mod enumeration;
 pub mod types;
 pub mod field;
@@ -10,3 +9,5 @@ pub mod generators;
 // Refactoring
 pub mod token_types;
 pub mod tokenizer;
+pub mod parser;
+pub mod ast;
