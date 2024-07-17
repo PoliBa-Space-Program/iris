@@ -1,17 +1,20 @@
+use std::collections::{HashMap, HashSet};
+
 pub struct AST {
     pub packages: Vec<Package>
 }
 
 pub struct Package {
-    pub name: String,
-    pub version: String,
-    pub structs: Vec<Struct>,
-    pub enums: Vec<Enum>
+    pub name: Option<String>,
+    pub version: Option<String>,
+    pub structs: HashMap<String, Struct>,
+    pub enums: HashMap<String, Enum>
 }
 
 pub struct Struct {
     pub name: String,
-    pub fields: Vec<StructField>
+    pub fields: HashMap<String, StructField>,
+    pub fields_order: Vec<String>
 }
 
 pub struct StructField {
@@ -20,10 +23,35 @@ pub struct StructField {
     pub array: Option<u32>
 }
 
+impl StructField {
+    pub fn new(name: String, field_type: String, array: Option<u32>) -> StructField {
+        StructField {
+            name,
+            t: FieldType::new(field_type),
+            array
+        }
+    }
+}
+
 pub enum FieldType {
-    ENUM(Enum),
-    STRUCT(Struct),
+    COMPLEX(String),
     PRIMITIVE(PrimitiveTypes)
+}
+
+impl FieldType {
+    pub fn new(field_type: String) -> FieldType {
+        match field_type.as_str() {
+            "u8" => FieldType::PRIMITIVE(PrimitiveTypes::U8),
+            "u16" => FieldType::PRIMITIVE(PrimitiveTypes::U16),
+            "u32" => FieldType::PRIMITIVE(PrimitiveTypes::U32),
+            "i8" => FieldType::PRIMITIVE(PrimitiveTypes::I8),
+            "i16" => FieldType::PRIMITIVE(PrimitiveTypes::I16),
+            "i32" => FieldType::PRIMITIVE(PrimitiveTypes::I32),
+            "f32" => FieldType::PRIMITIVE(PrimitiveTypes::F32),
+            "bool" => FieldType::PRIMITIVE(PrimitiveTypes::Bool),
+            _ => FieldType::COMPLEX(field_type)
+        }
+    }
 }
 
 pub enum PrimitiveTypes {
@@ -39,7 +67,8 @@ pub enum PrimitiveTypes {
 
 pub struct Enum {
     pub name: String,
-    pub variants: Vec<EnumVariant>
+    pub variants: HashSet<String>,
+    pub variants_order: Vec<EnumVariant>
 }
 
 pub struct EnumVariant {

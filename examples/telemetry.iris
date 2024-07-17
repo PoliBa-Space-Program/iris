@@ -17,8 +17,8 @@ struct Data {
 }
 
 enum Status {
-    SLEEP
-    ACTIVE: 3
-    FLIGHT
-    IDLE
+    SLEEP;
+    ACTIVE;
+    FLIGHT;
+    IDLE;
 }
