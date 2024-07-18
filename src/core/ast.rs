@@ -33,6 +33,7 @@ impl StructField {
     }
 }
 
+#[derive(Debug)]
 pub enum FieldType {
     COMPLEX(String),
     PRIMITIVE(PrimitiveTypes)
@@ -54,6 +55,7 @@ impl FieldType {
     }
 }
 
+#[derive(Debug)]
 pub enum PrimitiveTypes {
     U8,
     U16,

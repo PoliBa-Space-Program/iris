@@ -4,7 +4,7 @@ use super::{ast::{self, Package, StructField}, token_types::TokenTypes, tokenize
 
 pub struct Parser {
     tokenizer: Tokenizer,
-    ast: ast::AST,
+    pub ast: ast::AST,
     index: usize,
     curly_brackets: u32,
     in_struct: Option<String>,
@@ -43,8 +43,13 @@ impl Parser {
         });
         
         while self.index < self.tokenizer.tokens.len() {
-            match self.tokenizer.tokens.get(self.index).unwrap().t {
+            let token = self.tokenizer.tokens.get(self.index).unwrap();
+            match token.t {
                 TokenTypes::CloseCurlyBracket => {
+                    if self.curly_brackets == 0 {
+                        self.error("Unexpected closed curly bracket `}`.", 1, token.row, token.col);
+                    }
+                    
                     self.curly_brackets -= 1;
                     self.in_struct = None;
                     self.in_enum = None;
@@ -54,22 +59,26 @@ impl Parser {
                 TokenTypes::Struct => self.structure(),
                 TokenTypes::Enum => self.enumeration(),
                 TokenTypes::Identifier => {
-                    if self.in_struct == None {
+                    if self.in_struct != None {
                         self.struct_field();
                     }
-                    else if self.in_enum == None {
+                    else if self.in_enum != None {
                         self.enum_variant();
                     }
                     else {
                         let token = self.tokenizer.tokens.get(self.index).unwrap();
-                        self.error("", 1, token.row, token.col);
+                        self.error("Unexpected token.", 1, token.row, token.col);
                     }
                 },
-                TokenTypes::EndOfStream => {},
-                _ => {}
+                TokenTypes::EndOfStream => break,
+                _ => self.error("Unexpected token.", 1, token.row, token.col)
             }
 
             self.index += 1;
+        }
+
+        if self.curly_brackets > 0 {
+            self.error("Opened curly brackets not closed.", 1, 0, 0);
         }
     }
 
@@ -264,7 +273,7 @@ impl Parser {
     }
 
     fn enum_variant(&mut self) {
-        let mut variant_value = self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
+        let variant_value = self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
         let name = self.tokenizer.tokens.get(self.index).unwrap();
 
         if self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name.value.clone().unwrap()) {
