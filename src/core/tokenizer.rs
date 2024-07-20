@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::token_types::TokenTypes;
 
 
@@ -11,6 +13,8 @@ pub struct Token {
 pub struct Tokenizer {
     src: String,
     pub tokens: Vec<Token>,
+    pub structs: HashSet<String>,
+    pub enums: HashSet<String>,
     row: usize,
     col: usize,
     pos: usize,
@@ -23,10 +27,18 @@ impl Tokenizer {
         Tokenizer { 
             src: src.clone(),
             tokens: Vec::new(),
+            structs: HashSet::new(),
+            enums: HashSet::new(),
             row: 1,
             col: 1,
             pos: 0,
             current_c: Some(src.chars().nth(0).unwrap())
+        }
+    }
+
+    pub fn print(&self) {
+        for t in &self.tokens {
+            println!("{:?} {:?}", t.t, t.value);
         }
     }
 
@@ -193,7 +205,18 @@ impl Tokenizer {
             "package" => Token { t: TokenTypes::Package, value: None, row: num_row, col: num_col },
             "struct" => Token { t: TokenTypes::Struct, value: None, row: num_row, col: num_col },
             "enum" => Token { t: TokenTypes::Enum, value: None, row: num_row, col: num_col },
-            _ => Token { t: TokenTypes::Identifier, value: Some(buf), row: num_row, col: num_col }
+            _ => {
+                if self.tokens.len() > 0 {
+                    if self.tokens.last().unwrap().t == TokenTypes::Struct {
+                        self.structs.insert(buf.clone());
+                    }
+                    else if self.tokens.last().unwrap().t == TokenTypes::Enum {
+                        self.enums.insert(buf.clone());
+                    }
+                }
+
+                Token { t: TokenTypes::Identifier, value: Some(buf), row: num_row, col: num_col }
+            }
         }
     }
 }

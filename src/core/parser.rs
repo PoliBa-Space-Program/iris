@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{ast::{self, Package, StructField}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
+use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, token_types::TokenTypes, tokenizer::Tokenizer};
 
 pub struct Parser {
     tokenizer: Tokenizer,
@@ -27,6 +27,29 @@ impl Parser {
         parser.tokenizer.tokenize();
 
         parser
+    }
+
+    pub fn print(&self) {
+        println!("{:?}", self.tokenizer.structs);
+        println!("{:?}", self.tokenizer.enums);
+
+        for p in &self.ast.packages {
+            println!("{:?} {:?}", p.name, p.version);
+            
+            for s in p.structs.values() {
+                println!("{:?}:", s.name);
+                for f in s.fields.values() {
+                    println!("{:?} {:?} [{:?}]", f.name, f.t, f.array);
+                }
+            }
+    
+            for e in p.enums.values() {
+                println!("{:?}:", e.name);
+                for v in &e.variants_order {
+                    println!("{:?} {:?}", v.name, v.value)
+                }
+            }
+        }
     }
 
     /// Exit the program with an error
@@ -201,10 +224,25 @@ impl Parser {
     }
 
     fn struct_field(&mut self) {
-        let mut array: Option<u32> = None;
+        let mut array: Option<usize> = None;
         let mut name: String = String::new();
 
         let var_type = self.tokenizer.tokens.get(self.index).unwrap();
+        let field_type = match var_type.value.clone().unwrap().as_str() {
+            "u8" | "u16" | "u32" | "i8" | "i16" | "i32" | "f32" | "bool" => FieldType::PRIMITIVE(PrimitiveTypes::new(var_type.value.clone().unwrap())),
+            _ => {
+                if self.tokenizer.structs.contains(&var_type.value.clone().unwrap()) {
+                    FieldType::COMPLEX(ComplexTypes::Struct(var_type.value.clone().unwrap()))
+                }
+                else if self.tokenizer.enums.contains(&var_type.value.clone().unwrap()) {
+                    FieldType::COMPLEX(ComplexTypes::Enum(var_type.value.clone().unwrap()))
+                }
+                else {
+                    FieldType::COMPLEX(ComplexTypes::Unknown(var_type.value.clone().unwrap()))
+                }
+            }
+        };
+
 
         self.index += 1;
         let token = self.tokenizer.tokens.get(self.index).unwrap();
@@ -261,11 +299,11 @@ impl Parser {
             .fields
             .insert(
                 name.clone(), 
-                StructField::new(
-                    name.clone(), 
-                    var_type.value.clone().unwrap(), 
+                StructField {
+                    name: name.clone(), 
+                    t: field_type, 
                     array
-                )
+                }
             );
         self.ast.packages.last_mut().unwrap()
             .structs.get_mut(self.in_struct.as_ref().unwrap()).unwrap()

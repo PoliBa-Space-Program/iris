@@ -1,7 +1,5 @@
 #[derive(PartialEq, Debug)]
 pub enum TokenTypes {
-    Unknown,
-
     Colon,
     SemiColon,
     OpenSquareBracket,

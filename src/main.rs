@@ -24,36 +24,10 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-
-    //parse(&args.src, &args.out, &args.lang);
-    /*let src = fs::read_to_string(args.src).unwrap();
-
-    let mut tokenizer = Tokenizer::new(src);
-    tokenizer.tokenize();
-
-    for t in tokenizer.tokens {
-        println!("{:?} {:?}", t.t, t.value);
-    }*/
-
     let src = fs::read_to_string(args.src).unwrap();
     let mut parser = parser::Parser::new(src);
+    
     parser.generate_ast();
 
-    for p in parser.ast.packages {
-        println!("{:?} {:?}", p.name, p.version);
-        
-        for s in p.structs.values() {
-            println!("{:?}:", s.name);
-            for f in s.fields.values() {
-                println!("{:?} {:?} [{:?}]", f.name, f.t, f.array);
-            }
-        }
-
-        for e in p.enums.values() {
-            println!("{:?}:", e.name);
-            for v in &e.variants_order {
-                println!("{:?} {:?}", v.name, v.value)
-            }
-        }
-    }
+    parser.print();
 }
