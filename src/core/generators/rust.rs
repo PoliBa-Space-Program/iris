@@ -17,7 +17,7 @@ pub struct Rust {  }
 
 
 impl CodeGen for Rust {
-    fn gen_code(&self, package: &crate::core::package::Package) -> String {
+    fn gen_code(&self, package: &crate::core::ast::Package) -> String {
         let mut out = String::new();
 
         out.push_str("#![no_std]\n");

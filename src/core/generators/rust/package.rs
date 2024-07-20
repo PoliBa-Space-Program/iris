@@ -1,4 +1,4 @@
-use crate::core::package::Package;
+use crate::core::ast::Package;
 
 use super::{enumeration, r#struct};
 

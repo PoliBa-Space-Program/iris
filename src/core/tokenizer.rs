@@ -6,8 +6,8 @@ use super::token_types::TokenTypes;
 pub struct Token {
     pub t: TokenTypes,
     pub value: Option<String>,
-    pub row: usize,
-    pub col: usize
+    pub row: u32,
+    pub col: u32
 }
 
 pub struct Tokenizer {
@@ -15,9 +15,9 @@ pub struct Tokenizer {
     pub tokens: Vec<Token>,
     pub structs: HashSet<String>,
     pub enums: HashSet<String>,
-    row: usize,
-    col: usize,
-    pos: usize,
+    row: u32,
+    col: u32,
+    pos: u32,
     current_c: Option<char>
 }
 
@@ -115,18 +115,18 @@ impl Tokenizer {
         }
 
         self.pos += 1;
-        if self.pos >= self.src.len() {
+        if self.pos >= self.src.len() as u32 {
             self.current_c = None;
         }
         else {
-            self.current_c = Some(self.src.chars().nth(self.pos).unwrap());
+            self.current_c = Some(self.src.chars().nth(self.pos as usize).unwrap());
             self.col += 1;
         }
     }
 
     /// Go to the next position and return the character
-    fn peek(&self, n: usize) -> Option<char> {
-        self.src.chars().nth(self.pos + n)
+    fn peek(&self, n: u32) -> Option<char> {
+        self.src.chars().nth((self.pos + n) as usize)
     }
 
     /// Skip whitespaces until the next token

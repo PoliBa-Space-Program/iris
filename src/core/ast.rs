@@ -36,7 +36,7 @@ impl Struct {
         hash
     }
 
-    pub fn size(&self, pkg: &Package) -> usize {
+    pub fn size(&self, pkg: &Package) -> u32 {
         let mut counter = 0;
         for f in self.fields.values() {
             counter += f.size(pkg);
@@ -50,19 +50,11 @@ impl Struct {
 pub struct StructField {
     pub name: String,
     pub t: FieldType,
-    pub array: Option<usize>
+    pub array: Option<u32>
 }
 
 impl StructField {
-    pub fn new(name: String, field_type: String, array: Option<usize>) -> StructField {
-        StructField {
-            name,
-            t: FieldType::new(field_type),
-            array
-        }
-    }
-
-    pub fn size(&self, pkg: &Package) -> usize {
+    pub fn size(&self, pkg: &Package) -> u32 {
         self.t.size(pkg) * self.array.unwrap_or(1)
     }
 }
@@ -74,21 +66,14 @@ pub enum FieldType {
 }
 
 impl FieldType {
-    pub fn new(field_type: String) -> FieldType {
-        match field_type.as_str() {
-            "u8" => FieldType::PRIMITIVE(PrimitiveTypes::U8),
-            "u16" => FieldType::PRIMITIVE(PrimitiveTypes::U16),
-            "u32" => FieldType::PRIMITIVE(PrimitiveTypes::U32),
-            "i8" => FieldType::PRIMITIVE(PrimitiveTypes::I8),
-            "i16" => FieldType::PRIMITIVE(PrimitiveTypes::I16),
-            "i32" => FieldType::PRIMITIVE(PrimitiveTypes::I32),
-            "f32" => FieldType::PRIMITIVE(PrimitiveTypes::F32),
-            "bool" => FieldType::PRIMITIVE(PrimitiveTypes::Bool),
-            _ => FieldType::COMPLEX(ComplexTypes::Unknown(field_type))
+    pub fn str(&self) -> &str {
+        match self {
+            FieldType::PRIMITIVE(p) => p.str(),
+            FieldType::COMPLEX(c) => c.str()
         }
     }
 
-    pub fn size(&self, pkg: &Package) -> usize {
+    pub fn size(&self, pkg: &Package) -> u32 {
         match self {
             FieldType::PRIMITIVE(p) => p.size(),
             FieldType::COMPLEX(c) => c.size(pkg)
@@ -104,7 +89,15 @@ pub enum ComplexTypes {
 }
 
 impl ComplexTypes {
-    pub fn size(&self, pkg: &Package) -> usize {
+    pub fn str(&self) -> &str {
+        match self {
+            ComplexTypes::Struct(s) => s.as_str(),
+            ComplexTypes::Enum(e) => e.as_str(),
+            ComplexTypes::Unknown(u) => u.as_str()
+        }
+    }
+
+    pub fn size(&self, pkg: &Package) -> u32 {
         match self {
             ComplexTypes::Struct(s) => pkg.structs.get(s).unwrap().size(pkg), 
             ComplexTypes::Enum(e) => pkg.enums.get(e).unwrap().size(),
@@ -126,6 +119,19 @@ pub enum PrimitiveTypes {
 }
 
 impl PrimitiveTypes {
+    pub fn str(&self) -> &str {
+        match self {
+            PrimitiveTypes::U8 => "u8",
+            PrimitiveTypes::U16 => "u16",
+            PrimitiveTypes::U32 => "u32",
+            PrimitiveTypes::I8 => "i8",
+            PrimitiveTypes::I16 => "i16",
+            PrimitiveTypes::I32 => "i32",
+            PrimitiveTypes::F32 => "f32",
+            PrimitiveTypes::Bool => "bool"
+        }
+    }
+
     pub fn new(s: String) -> PrimitiveTypes {
         match s.as_str() {
             "u8" => PrimitiveTypes::U8,
@@ -140,7 +146,7 @@ impl PrimitiveTypes {
         }
     }
 
-    pub fn size(&self) -> usize {
+    pub fn size(&self) -> u32 {
         match self {
             PrimitiveTypes::U8 | PrimitiveTypes::I8 | PrimitiveTypes::Bool => 1,
             PrimitiveTypes::U16 | PrimitiveTypes::I16 => 2,
@@ -158,7 +164,7 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn size(&self) -> usize {
+    pub fn size(&self) -> u32 {
         4
     }
 }

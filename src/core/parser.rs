@@ -53,7 +53,7 @@ impl Parser {
     }
 
     /// Exit the program with an error
-    fn error(&self, msg: &str, code: u32, row: usize, col: usize) {
+    fn error(&self, msg: &str, code: u32, row: u32, col: u32) {
         panic!("Parser:{}:{} Error E{}: {}", row, col, code, msg);
     }
 
@@ -224,7 +224,7 @@ impl Parser {
     }
 
     fn struct_field(&mut self) {
-        let mut array: Option<usize> = None;
+        let mut array: Option<u32> = None;
         let mut name: String = String::new();
 
         let var_type = self.tokenizer.tokens.get(self.index).unwrap();

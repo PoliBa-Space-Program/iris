@@ -1,4 +1,4 @@
-//pub mod generators;
+pub mod generators;
 
 // Refactoring
 pub mod token_types;

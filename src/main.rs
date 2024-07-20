@@ -1,7 +1,7 @@
 use clap::Parser;
 
-use core::{parser, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
-use std::fs;
+use core::{generators::code_gen::{CodeGen, Langs}, parser};
+use std::{fs, io::Write, path::Path};
 
 mod core;
 
@@ -30,4 +30,16 @@ fn main() {
     parser.generate_ast();
 
     parser.print();
+
+    let lang = Langs::from_string(&args.lang);
+    let mut out = fs::File::create(
+        Path::new(args.out.as_str()).join(format!("iris.{}", lang.ext()))
+    ).unwrap();
+
+    out.write_all(match lang {
+        Langs::RUST(l) => l.gen_code(parser.ast.packages.first().unwrap()),
+        Langs::PYTHON(_) => todo!("Python code generation is not yet supported."),
+        Langs::CPP(_) => todo!("C++ code generation is not yet supported."),
+        Langs::C(_) => todo!("C code generation is not yet supported.")
+    }.as_bytes()).unwrap();
 }
