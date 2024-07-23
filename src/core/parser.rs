@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, token_types::TokenTypes, tokenizer::Tokenizer};
+use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
 
 pub struct Parser {
     tokenizer: Tokenizer,
@@ -57,6 +57,12 @@ impl Parser {
         panic!("Parser:{}:{} Error E{}: {}", row, col, code, msg);
     }
 
+    pub fn next(&mut self) -> &Token {
+        self.index += 1;
+        self.tokenizer.tokens.get(self.index).unwrap()
+    }
+
+    /// Create the AST used for code generation
     pub fn generate_ast(&mut self) {
         self.ast.packages.push(Package {
             name: None,
@@ -105,6 +111,7 @@ impl Parser {
         }
     }
 
+    /// Read the version declaration
     fn version(&mut self) {
         if self.ast.packages.last().unwrap().version != None {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
@@ -128,6 +135,7 @@ impl Parser {
         }
     }
 
+    /// Read the declaration of the package name
     fn package(&mut self) {
         if self.ast.packages.last().unwrap().name != None {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
@@ -151,6 +159,7 @@ impl Parser {
         }
     }
 
+    /// Create a node representing a struct
     fn structure(&mut self) {
         let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
@@ -187,6 +196,7 @@ impl Parser {
         }
     }
 
+    /// Create a node representing an enum 
     fn enumeration(&mut self) {
         let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
@@ -215,7 +225,7 @@ impl Parser {
                 self.in_enum = Some(name);
             }
             else {
-                self.error("Expected `:` after the identifier of an enum.", 1, token.row, token.col);
+                self.error("Expected `{` after the identifier of an enum.", 1, token.row, token.col);
             }
         }
         else {
@@ -223,6 +233,7 @@ impl Parser {
         }
     }
 
+    /// Add the field to the struct
     fn struct_field(&mut self) {
         let mut array: Option<u32> = None;
         let mut name: String = String::new();
@@ -243,9 +254,9 @@ impl Parser {
             }
         };
 
-
         self.index += 1;
         let token = self.tokenizer.tokens.get(self.index).unwrap();
+        
         if token.t == TokenTypes::OpenSquareBracket {
             self.index += 1;
             let array_size = self.tokenizer.tokens.get(self.index).unwrap();
@@ -310,6 +321,7 @@ impl Parser {
             .fields_order.push(name);
     }
 
+    /// Add the variant to the enum
     fn enum_variant(&mut self) {
         let variant_value = self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
         let name = self.tokenizer.tokens.get(self.index).unwrap();

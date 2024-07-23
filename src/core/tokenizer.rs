@@ -36,11 +36,12 @@ impl Tokenizer {
         }
     }
 
+    /*
     pub fn print(&self) {
         for t in &self.tokens {
             println!("{:?} {:?}", t.t, t.value);
         }
-    }
+    }*/
 
     /// Divide the source file into tokens and save them in a vector
     pub fn tokenize(&mut self) {
@@ -124,10 +125,11 @@ impl Tokenizer {
         }
     }
 
+    /*
     /// Go to the next position and return the character
     fn peek(&self, n: u32) -> Option<char> {
         self.src.chars().nth((self.pos + n) as usize)
-    }
+    }*/
 
     /// Skip whitespaces until the next token
     fn skip_whitespace(&mut self) {
