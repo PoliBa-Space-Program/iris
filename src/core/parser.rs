@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
+use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, error::{error, ErrorType}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
 
 pub struct Parser {
     tokenizer: Tokenizer,
@@ -52,11 +52,6 @@ impl Parser {
         }
     }
 
-    /// Exit the program with an error
-    fn error(&self, msg: &str, code: u32, row: u32, col: u32) {
-        panic!("Parser:{}:{} Error E{}: {}", row, col, code, msg);
-    }
-
     pub fn next(&mut self) -> &Token {
         self.index += 1;
         self.tokenizer.tokens.get(self.index).unwrap()
@@ -76,7 +71,7 @@ impl Parser {
             match token.t {
                 TokenTypes::CloseCurlyBracket => {
                     if self.curly_brackets == 0 {
-                        self.error("Unexpected closed curly bracket `}`.", 1, token.row, token.col);
+                        error(ErrorType::Parser, "Unexpected closed curly bracket `}`.", 1, token.row, token.col);
                     }
                     
                     self.curly_brackets -= 1;
@@ -96,18 +91,18 @@ impl Parser {
                     }
                     else {
                         let token = self.tokenizer.tokens.get(self.index).unwrap();
-                        self.error("Unexpected token.", 1, token.row, token.col);
+                        error(ErrorType::Parser, "Unexpected token.", 1, token.row, token.col);
                     }
                 },
                 TokenTypes::EndOfStream => break,
-                _ => self.error("Unexpected token.", 1, token.row, token.col)
+                _ => error(ErrorType::Parser, "Unexpected token.", 1, token.row, token.col)
             }
 
             self.index += 1;
         }
 
         if self.curly_brackets > 0 {
-            self.error("Opened curly brackets not closed.", 1, 0, 0);
+            error(ErrorType::Parser, "Opened curly brackets not closed.", 1, 0, 0);
         }
     }
 
@@ -115,7 +110,7 @@ impl Parser {
     fn version(&mut self) {
         if self.ast.packages.last().unwrap().version != None {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
-            self.error("Version already declared.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Version already declared.", 1, token.row, token.col);
         }
         self.index += 1;
 
@@ -127,11 +122,11 @@ impl Parser {
 
             let token = self.tokenizer.tokens.get(self.index).unwrap();
             if token.t != TokenTypes::SemiColon {
-                self.error("Expected semicolon.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected semicolon.", 1, token.row, token.col);
             }
         }
         else {
-            self.error("Expected semantic version after keyword `version`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected semantic version after keyword `version`.", 1, token.row, token.col);
         }
     }
 
@@ -139,7 +134,7 @@ impl Parser {
     fn package(&mut self) {
         if self.ast.packages.last().unwrap().name != None {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
-            self.error("Package name already declared.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Package name already declared.", 1, token.row, token.col);
         }
         self.index += 1;
 
@@ -151,11 +146,11 @@ impl Parser {
 
             let token = self.tokenizer.tokens.get(self.index).unwrap();
             if token.t != TokenTypes::SemiColon {
-                self.error("Expected semicolon.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected semicolon.", 1, token.row, token.col);
             }
         }
         else {
-            self.error("Expected identifier after keyword `package`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected identifier after keyword `package`.", 1, token.row, token.col);
         }
     }
 
@@ -163,7 +158,7 @@ impl Parser {
     fn structure(&mut self) {
         let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
-            self.error("Curly bracket not closed.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Curly bracket not closed.", 1, token.row, token.col);
         }
         self.index += 1;
 
@@ -175,7 +170,7 @@ impl Parser {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
             if token.t == TokenTypes::OpenCurlyBracket {
                 if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
-                    self.error("Name already used.", 1, token.row, token.col);
+                    error(ErrorType::Parser, "Name already used.", 1, token.row, token.col);
                 }
                 else {
                     self.ast.packages.last_mut().unwrap().structs.insert(name.clone(), ast::Struct {
@@ -188,11 +183,11 @@ impl Parser {
                 self.in_struct = Some(name);
             }
             else {
-                self.error("Expected `{` after the identifier of struct.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected `{` after the identifier of struct.", 1, token.row, token.col);
             }
         }
         else {
-            self.error("Expected identifier after keyword `struct`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected identifier after keyword `struct`.", 1, token.row, token.col);
         }
     }
 
@@ -200,7 +195,7 @@ impl Parser {
     fn enumeration(&mut self) {
         let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
-            self.error("Curly bracket not closed.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Curly bracket not closed.", 1, token.row, token.col);
         }
         self.index += 1;
 
@@ -212,7 +207,7 @@ impl Parser {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
             if token.t == TokenTypes::OpenCurlyBracket {
                 if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
-                    self.error("Name already used.", 1, token.row, token.col);
+                    error(ErrorType::Parser, "Name already used.", 1, token.row, token.col);
                 }
                 else {
                     self.ast.packages.last_mut().unwrap().enums.insert(name.clone(), ast::Enum {
@@ -225,11 +220,11 @@ impl Parser {
                 self.in_enum = Some(name);
             }
             else {
-                self.error("Expected `{` after the identifier of an enum.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected `{` after the identifier of an enum.", 1, token.row, token.col);
             }
         }
         else {
-            self.error("Expected identifier after keyword `enum`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected identifier after keyword `enum`.", 1, token.row, token.col);
         }
     }
 
@@ -266,17 +261,17 @@ impl Parser {
                     Err(_) => None
                 };
                 if array == None {
-                    self.error("Invalid index.", 1, array_size.row, array_size.col);
+                    error(ErrorType::Parser, "Invalid index.", 1, array_size.row, array_size.col);
                 }
             }
             else {
-                self.error("Expected unsigned integer.", 1, array_size.row, array_size.col);
+                error(ErrorType::Parser, "Expected unsigned integer.", 1, array_size.row, array_size.col);
             }
 
             self.index += 1;
             let token = self.tokenizer.tokens.get(self.index).unwrap();
             if token.t != TokenTypes::CloseSquareBracket {
-                self.error("Expected `]` but found something else.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected `]` but found something else.", 1, token.row, token.col);
             }
 
             self.index += 1;
@@ -285,24 +280,24 @@ impl Parser {
                 name = token.value.clone().unwrap();
             }
             else {
-                self.error("Expected an identifier.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected an identifier.", 1, token.row, token.col);
             }
         }
         else if token.t == TokenTypes::Identifier {
             name = token.value.clone().unwrap();
         }
         else {
-            self.error("Unexpected token after identifier.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Unexpected token after identifier.", 1, token.row, token.col);
         }
 
         self.index += 1;
         let token = self.tokenizer.tokens.get(self.index).unwrap();
         if token.t != TokenTypes::SemiColon {
-            self.error("Expected a semicolon `;`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected a semicolon `;`.", 1, token.row, token.col);
         }
 
         if self.ast.packages.last().unwrap().structs.get(self.in_struct.as_ref().unwrap()).unwrap().fields.contains_key(&name) {
-            self.error("Field name already used.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Field name already used.", 1, token.row, token.col);
         }
 
         self.ast.packages.last_mut().unwrap()
@@ -327,7 +322,7 @@ impl Parser {
         let name = self.tokenizer.tokens.get(self.index).unwrap();
 
         if self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name.value.clone().unwrap()) {
-            self.error("Variant name already used.", 1, name.row, name.col);
+            error(ErrorType::Parser, "Variant name already used.", 1, name.row, name.col);
         }
 
         self.index += 1;
@@ -344,7 +339,7 @@ impl Parser {
                 });
         }
         else {
-            self.error("Expected a semicolon `;`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected a semicolon `;`.", 1, token.row, token.col);
         }
     }
 }

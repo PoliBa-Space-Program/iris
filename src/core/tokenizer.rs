@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::token_types::TokenTypes;
+use super::{error::{error, ErrorType}, token_types::TokenTypes};
 
 
 pub struct Token {
@@ -97,15 +97,10 @@ impl Tokenizer {
                 return Token { t: TokenTypes::CloseCurlyBracket, value: None, row: self.row, col: self.col };
             }
             
-            self.error("Syntax error, unknown token.", 1);
+            error(ErrorType::Tokenizer, "Syntax error, unknown token.", 1, self.row, self.col);
         }
 
         return Token { t: TokenTypes::EndOfStream, value: None, row: self.row, col: self.col };
-    }
-
-    /// Exit the program with an error
-    fn error(&self, msg: &str, code: u32) {
-        panic!("Tokenizer:{}:{} Error E{}: {}", self.row, self.col, code, msg);
     }
 
     /// Advance to the next character and set the current character 
