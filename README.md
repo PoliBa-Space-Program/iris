@@ -173,7 +173,6 @@ Check the `examples` folder to see how to use the generated code.
 
 ## To Do
 Next things to do:
- - Parsers and generator refactoring
  - imports
  - N-dimensions arrays
  - Extend code generation to other languages (Python, C++, C)
