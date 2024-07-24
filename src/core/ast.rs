@@ -11,6 +11,20 @@ pub struct Package {
     pub enums: HashMap<String, Enum>
 }
 
+impl Package {
+    pub fn add_struct_field(&mut self, struct_name: &String, field: StructField) {
+        let s = self.structs.get_mut(struct_name).unwrap();
+        s.fields_order.push(field.name.clone());
+        s.fields.insert(field.name.clone(), field);
+    }
+
+    pub fn add_enum_variant(&mut self, enum_name: &String, variant: EnumVariant) {
+        let e = self.enums.get_mut(enum_name).unwrap();
+        e.variants.insert(variant.name.clone());
+        e.variants_order.push(variant);
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,

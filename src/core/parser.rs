@@ -8,7 +8,9 @@ pub struct Parser {
     index: usize,
     curly_brackets: u32,
     in_struct: Option<String>,
-    in_enum: Option<String>
+    in_enum: Option<String>,
+    row: u32,
+    col: u32
 }
 
 impl Parser {
@@ -21,7 +23,9 @@ impl Parser {
             index: 0,
             curly_brackets: 0,
             in_struct: None,
-            in_enum: None
+            in_enum: None,
+            row: 0,
+            col: 0
         };
 
         parser.tokenizer.tokenize();
@@ -54,7 +58,16 @@ impl Parser {
 
     pub fn next(&mut self) -> &Token {
         self.index += 1;
-        self.tokenizer.tokens.get(self.index).unwrap()
+        let token = self.tokenizer.tokens.get(self.index).unwrap();
+
+        self.row = token.row;
+        self.col = token.col;
+
+        token
+    }
+
+    pub fn peek(&self, pos: usize) -> &Token {
+        self.tokenizer.tokens.get(self.index + pos).unwrap()
     }
 
     /// Create the AST used for code generation
@@ -109,18 +122,14 @@ impl Parser {
     /// Read the version declaration
     fn version(&mut self) {
         if self.ast.packages.last().unwrap().version != None {
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
-            error(ErrorType::Parser, "Version already declared.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Version already declared.", 1, self.row, self.col);
         }
-        self.index += 1;
 
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
+        let token = self.next();
         if token.t == TokenTypes::SemanticVersion {
             self.ast.packages.last_mut().unwrap().version = Some(token.value.clone().unwrap());
             
-            self.index += 1;
-
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
+            let token = self.next();
             if token.t != TokenTypes::SemiColon {
                 error(ErrorType::Parser, "Expected semicolon.", 1, token.row, token.col);
             }
@@ -133,18 +142,14 @@ impl Parser {
     /// Read the declaration of the package name
     fn package(&mut self) {
         if self.ast.packages.last().unwrap().name != None {
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
-            error(ErrorType::Parser, "Package name already declared.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Package name already declared.", 1, self.row, self.col);
         }
-        self.index += 1;
 
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
+        let token = self.next();
         if token.t == TokenTypes::Identifier {
             self.ast.packages.last_mut().unwrap().name = Some(token.value.clone().unwrap());
         
-            self.index += 1;
-
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
+            let token = self.next();
             if token.t != TokenTypes::SemiColon {
                 error(ErrorType::Parser, "Expected semicolon.", 1, token.row, token.col);
             }
@@ -156,21 +161,18 @@ impl Parser {
 
     /// Create a node representing a struct
     fn structure(&mut self) {
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
-            error(ErrorType::Parser, "Curly bracket not closed.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Curly bracket not closed.", 1, self.row, self.col);
         }
-        self.index += 1;
 
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
-        if token.t == TokenTypes::Identifier {
-            self.index += 1;
-            let name = token.value.as_ref().unwrap().clone();
+        let token_t = self.next().t.clone();
+        if token_t == TokenTypes::Identifier {
+            let name = self.peek(0).value.clone().unwrap();
 
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
-            if token.t == TokenTypes::OpenCurlyBracket {
+            let token_t = self.next().t.clone();
+            if token_t == TokenTypes::OpenCurlyBracket {
                 if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
-                    error(ErrorType::Parser, "Name already used.", 1, token.row, token.col);
+                    error(ErrorType::Parser, "Name already used.", 1, self.row, self.col);
                 }
                 else {
                     self.ast.packages.last_mut().unwrap().structs.insert(name.clone(), ast::Struct {
@@ -183,31 +185,28 @@ impl Parser {
                 self.in_struct = Some(name);
             }
             else {
-                error(ErrorType::Parser, "Expected `{` after the identifier of struct.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected `{` after the identifier of struct.", 1, self.row, self.col);
             }
         }
         else {
-            error(ErrorType::Parser, "Expected identifier after keyword `struct`.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Expected identifier after keyword `struct`.", 1, self.row, self.col);
         }
     }
 
     /// Create a node representing an enum 
     fn enumeration(&mut self) {
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
         if self.curly_brackets > 0 {
-            error(ErrorType::Parser, "Curly bracket not closed.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Curly bracket not closed.", 1, self.row, self.col);
         }
-        self.index += 1;
 
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
+        let token = self.next();
         if token.t == TokenTypes::Identifier {
-            self.index += 1;
             let name = token.value.as_ref().unwrap().clone();
 
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
-            if token.t == TokenTypes::OpenCurlyBracket {
+            let token_t = self.next().t.clone();
+            if token_t == TokenTypes::OpenCurlyBracket {
                 if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
-                    error(ErrorType::Parser, "Name already used.", 1, token.row, token.col);
+                    error(ErrorType::Parser, "Name already used.", 1, self.row, self.col);
                 }
                 else {
                     self.ast.packages.last_mut().unwrap().enums.insert(name.clone(), ast::Enum {
@@ -220,7 +219,7 @@ impl Parser {
                 self.in_enum = Some(name);
             }
             else {
-                error(ErrorType::Parser, "Expected `{` after the identifier of an enum.", 1, token.row, token.col);
+                error(ErrorType::Parser, "Expected `{` after the identifier of an enum.", 1, self.row, self.col);
             }
         }
         else {
@@ -249,12 +248,10 @@ impl Parser {
             }
         };
 
-        self.index += 1;
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
-        
+        let token = self.next();
         if token.t == TokenTypes::OpenSquareBracket {
-            self.index += 1;
-            let array_size = self.tokenizer.tokens.get(self.index).unwrap();
+            let array_size = self.next();
+
             if array_size.t == TokenTypes::UInt {
                 array = match array_size.value.as_ref().unwrap().parse() {
                     Ok(v) => Some(v),
@@ -268,14 +265,12 @@ impl Parser {
                 error(ErrorType::Parser, "Expected unsigned integer.", 1, array_size.row, array_size.col);
             }
 
-            self.index += 1;
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
+            let token = self.next();
             if token.t != TokenTypes::CloseSquareBracket {
                 error(ErrorType::Parser, "Expected `]` but found something else.", 1, token.row, token.col);
             }
 
-            self.index += 1;
-            let token = self.tokenizer.tokens.get(self.index).unwrap();
+            let token = self.next();
             if token.t == TokenTypes::Identifier {
                 name = token.value.clone().unwrap();
             }
@@ -290,53 +285,39 @@ impl Parser {
             error(ErrorType::Parser, "Unexpected token after identifier.", 1, token.row, token.col);
         }
 
-        self.index += 1;
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
-        if token.t != TokenTypes::SemiColon {
-            error(ErrorType::Parser, "Expected a semicolon `;`.", 1, token.row, token.col);
+        let token_t = self.next().t.clone();
+        if token_t != TokenTypes::SemiColon {
+            error(ErrorType::Parser, "Expected a semicolon `;`.", 1, self.row, self.col);
         }
 
         if self.ast.packages.last().unwrap().structs.get(self.in_struct.as_ref().unwrap()).unwrap().fields.contains_key(&name) {
-            error(ErrorType::Parser, "Field name already used.", 1, token.row, token.col);
+            error(ErrorType::Parser, "Field name already used.", 1, self.row, self.col);
         }
 
-        self.ast.packages.last_mut().unwrap()
-            .structs.get_mut(self.in_struct.as_ref().unwrap()).unwrap()
-            .fields
-            .insert(
-                name.clone(), 
-                StructField {
-                    name: name.clone(), 
-                    t: field_type, 
-                    array
-                }
-            );
-        self.ast.packages.last_mut().unwrap()
-            .structs.get_mut(self.in_struct.as_ref().unwrap()).unwrap()
-            .fields_order.push(name);
+        self.ast.packages.last_mut().unwrap().add_struct_field(
+            self.in_struct.as_ref().unwrap(), 
+            StructField { name, t: field_type, array }
+        );
     }
 
     /// Add the variant to the enum
     fn enum_variant(&mut self) {
         let variant_value = self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
-        let name = self.tokenizer.tokens.get(self.index).unwrap();
-
-        if self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name.value.clone().unwrap()) {
-            error(ErrorType::Parser, "Variant name already used.", 1, name.row, name.col);
+        
+        let name = self.peek(0).value.clone().unwrap();
+        if self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name) {
+            error(ErrorType::Parser, "Variant name already used.", 1, self.row, self.col);
         }
 
-        self.index += 1;
-        let token = self.tokenizer.tokens.get(self.index).unwrap();
+        let token = self.next();
         if token.t == TokenTypes::SemiColon {
-            self.ast.packages.last_mut().unwrap()
-                .enums.get_mut(self.in_enum.as_ref().unwrap()).unwrap()
-                .variants.insert(name.value.clone().unwrap());
-            self.ast.packages.last_mut().unwrap()
-                .enums.get_mut(self.in_enum.as_ref().unwrap()).unwrap()
-                .variants_order.push(ast::EnumVariant {
-                    name: name.value.clone().unwrap(),
+            self.ast.packages.last_mut().unwrap().add_enum_variant(
+                self.in_enum.as_ref().unwrap(), 
+                ast::EnumVariant {
+                    name,
                     value: variant_value as u32
-                });
+                }
+            );
         }
         else {
             error(ErrorType::Parser, "Expected a semicolon `;`.", 1, token.row, token.col);
