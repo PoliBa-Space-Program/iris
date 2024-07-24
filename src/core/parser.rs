@@ -81,10 +81,12 @@ impl Parser {
         
         while self.index < self.tokenizer.tokens.len() {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
+            self.row = token.row;
+            self.col = token.col;
             match token.t {
                 TokenTypes::CloseCurlyBracket => {
                     if self.curly_brackets == 0 {
-                        error(ErrorType::Parser, "Unexpected closed curly bracket `}`.", 1, token.row, token.col);
+                        error(ErrorType::Parser, "Unexpected closed curly bracket `}`.", 1, self.row, self.col);
                     }
                     
                     self.curly_brackets -= 1;
@@ -103,12 +105,11 @@ impl Parser {
                         self.enum_variant();
                     }
                     else {
-                        let token = self.tokenizer.tokens.get(self.index).unwrap();
-                        error(ErrorType::Parser, "Unexpected token.", 1, token.row, token.col);
+                        error(ErrorType::Parser, "Unexpected token.", 1, self.row, self.col);
                     }
                 },
                 TokenTypes::EndOfStream => break,
-                _ => error(ErrorType::Parser, "Unexpected token.", 1, token.row, token.col)
+                _ => error(ErrorType::Parser, "Unexpected token.", 1, self.row, self.col)
             }
 
             self.index += 1;
@@ -232,7 +233,8 @@ impl Parser {
         let mut array: Option<u32> = None;
         let mut name: String = String::new();
 
-        let var_type = self.tokenizer.tokens.get(self.index).unwrap();
+        //let var_type = self.tokenizer.tokens.get(self.index).unwrap();
+        let var_type = self.peek(0);
         let field_type = match var_type.value.clone().unwrap().as_str() {
             "u8" | "u16" | "u32" | "i8" | "i16" | "i32" | "f32" | "bool" => FieldType::PRIMITIVE(PrimitiveTypes::new(var_type.value.clone().unwrap())),
             _ => {
