@@ -5,7 +5,7 @@ pub fn error(ctx: ErrorType, msg: &str, code: u32, row: u32, col: u32) {
 pub enum ErrorType {
     Tokenizer,
     Parser,
-    CodeGenerator
+    //CodeGenerator
 }
 
 impl ErrorType {
@@ -13,7 +13,7 @@ impl ErrorType {
         match self {
             ErrorType::Tokenizer => "Tokenizer",
             ErrorType::Parser => "Parser",
-            ErrorType::CodeGenerator => "Code generator"
+            //ErrorType::CodeGenerator => "Code generator"
         }
     }
 }
