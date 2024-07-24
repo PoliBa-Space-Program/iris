@@ -1,6 +1,7 @@
 use clap::Parser;
 
-use core::parser::parse;
+use core::{generators::code_gen::{CodeGen, Langs}, parser};
+use std::{fs, io::Write, path::Path};
 
 mod core;
 
@@ -23,5 +24,19 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    parse(&args.src, &args.out, &args.lang);
+    let src = fs::read_to_string(args.src).unwrap();
+    let mut parser = parser::Parser::new(src);
+    parser.generate_ast();
+
+    let lang = Langs::from_string(&args.lang);
+    let mut out = fs::File::create(
+        Path::new(args.out.as_str()).join(format!("iris.{}", lang.ext()))
+    ).unwrap();
+
+    out.write_all(match lang {
+        Langs::RUST(l) => l.gen_code(parser.ast.packages.first().unwrap()),
+        Langs::PYTHON(_) => todo!("Python code generation is not yet supported."),
+        Langs::CPP(_) => todo!("C++ code generation is not yet supported."),
+        Langs::C(_) => todo!("C code generation is not yet supported.")
+    }.as_bytes()).unwrap();
 }

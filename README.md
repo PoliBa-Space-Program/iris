@@ -22,7 +22,7 @@ The main needs are:
    - [Arrays](#arrays)
    - [Supported types](#supported-types)
    - [Comments](#comments)
- - [File format regex](#file-format-regex)
+ - [File format](#file-format)
    - [Version](#version-1)
    - [Package](#package-1)
    - [Struct](#struct)
@@ -38,22 +38,27 @@ The main needs are:
 ### Version
 The version is used to manage compatibility.
 The version must be declared on top of the file.
+If the version if different from the one declared in *Cargo.toml* an error will be thrown.
+In future semantic version syntax support will be added.
 ```
-version 1.3.13
+version 3.0.0;
 ```
 
 ### Package
 The name of the package, it will be used when generating the classes.
 The name of the package must be placed after the version.
 ```
-package TheGreatesPackage_ever
+package TheGreatesPackage_ever;
 ```
 
 ### Field number
-The max number of field in a single struct is 2^32.
+The max number of fields in a single struct is 2^32.
 
 ### Field order
 The fields are encoded in the same order as they are declared. The first field will be the first found in the encoded bytes.
+
+### Variant number
+The max number of variants in a single enum is 2^32.
 
 ### Arrays
 Only 1-D arrays are supported.
@@ -83,30 +88,44 @@ version 23.1.3 # This is a comment
 package Something
 ```
 
-## File format regex
+## File format
 ### Version
 ```
-^(?<version>version) +(?<number>(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)) *(#.*)?$
+version 3.0.0;
 ```
+
 ### Package
 ```
-^(?<package>package) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
+package The_BestP4ckage;
 ```
+
 ### Struct
 ```
-^(?<struct>struct) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
+struct MyStruct {
+
+}
 ```
+
 ### Struct field
 ```
-^ {4}(?<type>i8|i16|i32|u8|u16|u32|f32|bool)(?<array>\[[0-9]+\])? +(?<name>[_a-zA-Z][_a-zA-Z0-9]*) *(#.*)?$
+struct MyStruct {
+    f32 value;
+    u8[90] raw_data;
+}
 ```
+
 ### Enum
 ```
-^(?<enum>enum) +(?<name>[_a-zA-Z][_a-zA-Z0-9]*): *(#.*)?$
+enum MyEnum {
+
+}
 ```
+
 ### Enum variant
 ```
-^ {4}(?<name>[_a-zA-Z][_a-zA-Z0-9]*)(: (?<value>[+-]?[0-9]+))? *(#.*)?$
+enum MyEnum {
+    FIRST_VARIANT;
+}
 ```
 
 
@@ -159,3 +178,5 @@ Next things to do:
  - N-dimensions arrays
  - Extend code generation to other languages (Python, C++, C)
  - random access
+
+https://medium.com/@BadFoolPrototype/writing-a-simple-code-generator-7af057c58d22

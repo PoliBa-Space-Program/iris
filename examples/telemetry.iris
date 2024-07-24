@@ -1,12 +1,24 @@
-version 2.0.0 # dwaihdwa
+version 3.0.0; # dwaihdwa
 
-package Telemetry
+package        Telemetry        ;
 
-struct Data:
-    Status[2] status
+struct Battery {
+    f32 charge;
+}
 
-enum Status:
-    SLEEP
-    ACTIVE
-    FLIGHT
-    IDLE
+struct Computer {
+    u32 id;
+    Battery[2] batteries;
+    Status status;
+}
+
+struct Data {
+    Computer[2] computers;
+}
+
+enum Status {
+    SLEEP;
+    ACTIVE;
+    FLIGHT;
+    IDLE;
+}

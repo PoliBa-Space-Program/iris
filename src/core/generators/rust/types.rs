@@ -1,23 +1,32 @@
-use crate::core::{package::Package, types::Types};
+use crate::core::ast::{ComplexTypes, FieldType, Package, PrimitiveTypes};
 
 use super::field::gen_default;
 
-pub fn gen_default_value(r#type: &Types, package: &Package) -> String {
-    match r#type {
-        Types::U8 | Types::U16 | Types::U32 | Types::I8 | Types::I16 | Types::I32 => String::from("0"),
-        Types::BOOL => String::from("false"),
-        Types::F32 => String::from("0.0"),
-        Types::LEN(s) => {
-            let mut out = String::new();
-
-            out.push_str(format!("{} {{\n", s.name).as_str());
-            for f in s.fields.values() {
-                out.push_str(gen_default(f, package).as_str());
+pub fn gen_default_value(t: &FieldType, package: &Package) -> String {
+    match t {
+        FieldType::PRIMITIVE(p) => {
+            match p {
+                PrimitiveTypes::U8 | PrimitiveTypes::U16 | PrimitiveTypes::U32 | PrimitiveTypes::I8 | PrimitiveTypes::I16 | PrimitiveTypes::I32 => String::from("0"),
+                PrimitiveTypes::Bool => String::from("false"),
+                PrimitiveTypes::F32 => String::from("0.0")
             }
-            out.push_str("}\n");
-
-            out
         },
-        Types::ENUM(e) => format!("{}::{}", e.name, e.variants_order.first().unwrap())
+        FieldType::COMPLEX(c) => {
+            match c {
+                ComplexTypes::Struct(s) => {
+                    let mut out = String::new();
+
+                    out.push_str(format!("{} {{\n", s).as_str());
+                    for f in package.structs.get(s).unwrap().fields.values() {
+                        out.push_str(gen_default(f, package).as_str());
+                    }
+                    out.push_str("}\n");
+
+                    out
+                },
+                ComplexTypes::Enum(e) => format!("{}::{}", e, package.enums.get(e).unwrap().variants_order.first().unwrap().name),
+                ComplexTypes::Unknown(_u) => panic!("Can't generate default value for unknow value")
+            }
+        }
     }
 }
