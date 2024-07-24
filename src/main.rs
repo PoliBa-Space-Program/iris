@@ -26,10 +26,7 @@ fn main() {
 
     let src = fs::read_to_string(args.src).unwrap();
     let mut parser = parser::Parser::new(src);
-    
     parser.generate_ast();
-
-    parser.print();
 
     let lang = Langs::from_string(&args.lang);
     let mut out = fs::File::create(

@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use semver::{BuildMetadata, Prerelease, Version, VersionReq};
+
 pub struct AST {
     pub packages: Vec<Package>
 }
@@ -22,6 +24,20 @@ impl Package {
         let e = self.enums.get_mut(enum_name).unwrap();
         e.variants.insert(variant.name.clone());
         e.variants_order.push(variant);
+    }
+
+    pub fn check_version(&self) -> bool {
+        let version = Version {
+            major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap(),
+            minor: env!("CARGO_PKG_VERSION_MINOR").parse().unwrap(),
+            patch: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap(),
+            pre: Prerelease::EMPTY,
+            build: BuildMetadata::EMPTY
+        };
+
+        let req = VersionReq::parse(self.version.clone().unwrap().as_str());
+        
+        req.unwrap().matches(&version)
     }
 }
 

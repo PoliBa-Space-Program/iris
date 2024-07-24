@@ -129,7 +129,7 @@ impl Parser {
         let token = self.next();
         if token.t == TokenTypes::SemanticVersion {
             self.ast.packages.last_mut().unwrap().version = Some(token.value.clone().unwrap());
-            
+
             let token = self.next();
             if token.t != TokenTypes::SemiColon {
                 error(ErrorType::Parser, "Expected semicolon.", 1, token.row, token.col);
@@ -137,6 +137,10 @@ impl Parser {
         }
         else {
             error(ErrorType::Parser, "Expected semantic version after keyword `version`.", 1, token.row, token.col);
+        }
+
+        if !self.ast.packages.last().unwrap().check_version() {
+            error(ErrorType::Parser, "Invalid version not valid.", 1, self.row, self.col);
         }
     }
 

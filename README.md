@@ -38,15 +38,17 @@ The main needs are:
 ### Version
 The version is used to manage compatibility.
 The version must be declared on top of the file.
+If the version if different from the one declared in *Cargo.toml* an error will be thrown.
+In future semantic version syntax support will be added.
 ```
-version 3.0.0
+version 3.0.0;
 ```
 
 ### Package
 The name of the package, it will be used when generating the classes.
 The name of the package must be placed after the version.
 ```
-package TheGreatesPackage_ever
+package TheGreatesPackage_ever;
 ```
 
 ### Field number
