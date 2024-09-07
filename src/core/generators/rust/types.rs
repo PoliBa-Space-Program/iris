@@ -25,7 +25,7 @@ pub fn gen_default_value(t: &FieldType, package: &Package) -> String {
                     out
                 },
                 ComplexTypes::Enum(e) => format!("{}::{}", e, package.enums.get(e).unwrap().variants_order.first().unwrap().name),
-                ComplexTypes::Unknown(_u) => panic!("Can't generate default value for unknow value")
+                ComplexTypes::Unknown(_u) => panic!("Can't generate default value for unknow type.")
             }
         }
     }
