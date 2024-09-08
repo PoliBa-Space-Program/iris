@@ -12,7 +12,7 @@ pub fn gen_code(package: &Package) -> String {
     }
 
     for s in package.structs.values() {
-        out.push_str(r#struct.gen_code(s, package).as_str());
+        out.push_str(r#struct::gen_code(s, package).as_str());
     }
 
     out
