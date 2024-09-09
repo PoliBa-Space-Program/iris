@@ -188,7 +188,7 @@ Check the `examples` folder to see how to use the generated code.
 Next things to do:
  - imports
  - N-dimensions arrays
- - Extend code generation to other languages (Python, C++, C)
+ - Extend code generation to other languages (C++, C)
  - random access
 
 https://medium.com/@BadFoolPrototype/writing-a-simple-code-generator-7af057c58d22
