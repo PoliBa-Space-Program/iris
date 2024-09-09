@@ -1,4 +1,4 @@
-use crate::core::ast::{Package, PrimitiveTypes, ComplexTypes, FieldType, StructField};
+use crate::core::ast::{ComplexTypes, FieldType, StructField};
 
 pub fn gen_pack_arg(field: &StructField) -> String {
     let mut out = String::new();
