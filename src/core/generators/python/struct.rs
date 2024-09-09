@@ -56,8 +56,8 @@ pub fn gen_code(strc: &Struct, package: &Package) -> String {
                 match &f.t {
                     FieldType::COMPLEX(c) => {
                         match c {
-                            crate::core::ast::ComplexTypes::Struct(_) => {
-                                out.push_str(format!("[Iris.Packages.{}.{}.from_be_bytes(bytes(data[i:i+{}])) for i in range({}, {}, {})]", package.name.as_ref().unwrap(), strc.name, f.t.size(package), data_index, f.size(package), f.t.size(package)).as_str());
+                            crate::core::ast::ComplexTypes::Struct(s) => {
+                                out.push_str(format!("[Iris.Packages.{}.{}.from_be_bytes(bytes(data[i:i+{}])) for i in range({}, {}, {})]", package.name.as_ref().unwrap(), s, f.t.size(package), data_index, f.size(package), f.t.size(package)).as_str());
                                 data_index += f.size(package);
                             },
                             crate::core::ast::ComplexTypes::Enum(_) => {
@@ -77,8 +77,8 @@ pub fn gen_code(strc: &Struct, package: &Package) -> String {
                 match &f.t {
                     FieldType::COMPLEX(c) => {
                         match c {
-                            crate::core::ast::ComplexTypes::Struct(_) => {
-                                out.push_str(format!("Iris.Packages.{}.{}.from_be_bytes(bytes(data[{}:{}]))", package.name.as_ref().unwrap(), strc.name, data_index, data_index + strc.size(package)).as_str());
+                            crate::core::ast::ComplexTypes::Struct(s) => {
+                                out.push_str(format!("Iris.Packages.{}.{}.from_be_bytes(bytes(data[{}:{}]))", package.name.as_ref().unwrap(), s, data_index, data_index + strc.size(package)).as_str());
                                 data_index += f.size(package);
                             },
                             crate::core::ast::ComplexTypes::Enum(_) => {

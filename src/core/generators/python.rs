@@ -29,7 +29,7 @@ impl CodeGen for Python {
 
         out.push_str("    @staticmethod\n");
         out.push_str("    def decode(raw: bytes):\n");
-        out.push_str("        name_hash = struct.unpuck('>I', raw[0:4])[0]\n");
+        out.push_str("        name_hash = struct.unpack('>I', raw[0:4])[0]\n");
         out.push_str("        match name_hash:\n");
         for s in package.structs.values() {
             out.push_str(format!("            case Iris.Packages.{}.{}.NAME_HASH if len(raw) == Iris.Packages.{}.{}.BYTES_LENGTH:\n", package.name.clone().unwrap(), s.name, package.name.clone().unwrap(), s.name).as_str());
