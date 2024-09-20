@@ -16,7 +16,7 @@ struct Args {
     #[arg(short, long, default_value_t = String::from("."))]
     out: String,
 
-    /// Language to use for code generation. Supported: rust.
+    /// Language to use for code generation. Supported: rust, c++, python.
     #[arg(short, long, default_value_t = String::from("rust"))]
     lang: String,
 }
@@ -36,7 +36,6 @@ fn main() {
     out.write_all(match lang {
         Langs::RUST(l) => l.gen_code(parser.ast.packages.first().unwrap()),
         Langs::PYTHON(l) => l.gen_code(parser.ast.packages.first().unwrap()),
-        Langs::CPP(_) => todo!("C++ code generation is not yet supported."),
-        Langs::C(_) => todo!("C code generation is not yet supported.")
+        Langs::CPP(l) => l.gen_code(parser.ast.packages.first().unwrap())
     }.as_bytes()).unwrap();
 }

@@ -79,17 +79,17 @@ The supported data types are:
 | 4 | f32, i32, u32, enum |
 
 Corresponding types by language:
-| Size | Type | Rust | Python | C | C++ |
-| --- | --- | --- | --- | --- | --- |
-| 1 | i8 | i8 | int | signed char | signed char |
-| 1 | u8 | u8 | int | unsigned char | unsigned char |
-| 1 | bool | bool | bool | bool | bool |
-| 2 | i16 | i16 | int | short | short |
-| 2 | u16 | u16 | int | unsigned short | unsigned short |
-| 4 | f32 | f32 | float | float | float |
-| 4 | i32 | i32 | int | int | int |
-| 4 | u32 | u32 | int | unsigned int | unsigned int |
-| 4 | enum | u32 | int | unsigned int | unsigned int |
+| Size | Type | Rust | Python | C++ |
+| --- | --- | --- | --- | --- |
+| 1 | i8 | i8 | int | signed char |
+| 1 | u8 | u8 | int | unsigned char |
+| 1 | bool | bool | bool | bool |
+| 2 | i16 | i16 | int | short |
+| 2 | u16 | u16 | int | unsigned short |
+| 4 | f32 | f32 | float | float |
+| 4 | i32 | i32 | int | int |
+| 4 | u32 | u32 | int | unsigned int |
+| 4 | enum | u32 | int | unsigned int |
 
 
 ### Comments
@@ -165,7 +165,6 @@ Using the flag `--lang` or `-l` you can specify the language to use. The support
 | Rust | rust, rs |
 | Python | python, py |
 | C++ | c++, cpp |
-| C | c |
 
 Example:
 ```
@@ -188,7 +187,6 @@ Check the `examples` folder to see how to use the generated code.
 Next things to do:
  - imports
  - N-dimensions arrays
- - Extend code generation to other languages (C++, C)
  - random access
 
 https://medium.com/@BadFoolPrototype/writing-a-simple-code-generator-7af057c58d22
