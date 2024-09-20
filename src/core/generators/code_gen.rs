@@ -1,13 +1,12 @@
 use crate::core::ast::Package;
 
-use super::{c, cpp, python, rust};
+use super::{cpp, python, rust};
 
 
 pub enum Langs {
     RUST(rust::Rust),
     PYTHON(python::Python),
-    CPP(cpp::Cpp),
-    C(c::C)
+    CPP(cpp::CPP)
 }
 
 impl Langs {
@@ -15,8 +14,7 @@ impl Langs {
         match s {
             "rust" | "rs" => Langs::RUST(rust::Rust {  }),
             "python" | "py" => Langs::PYTHON(python::Python {  }),
-            "c++" | "cpp" => Langs::CPP(cpp::Cpp {  }),
-            "c" => Langs::C(c::C {  }),
+            "c++" | "cpp" => Langs::CPP(cpp::CPP {  }),
             _ => panic!("Error, specified language is not supported.")
         }
     }
@@ -25,8 +23,7 @@ impl Langs {
         match self {
             Langs::RUST(_) => "rs",
             Langs::PYTHON(_) => "py",
-            Langs::CPP(_) => "hpp",
-            Langs::C(_) => "h"
+            Langs::CPP(_) => "hpp"
         }
     }
 }

@@ -16,8 +16,8 @@ pub fn gen_pack_format(t: &FieldType, package: &Package) -> String {
         },
         FieldType::COMPLEX(c) => {
             match c {
-                ComplexTypes::Struct(s) => format!("{}B", t.size(package)),
-                ComplexTypes::Enum(e) => String::from("I"),
+                ComplexTypes::Struct(_s) => format!("{}B", t.size(package)),
+                ComplexTypes::Enum(_e) => String::from("I"),
                 ComplexTypes::Unknown(_u) => panic!("Can't generate pack format value for unknown type.")
             }
         }
