@@ -20,9 +20,6 @@ impl CodeGen for Rust {
     fn gen_code(&self, package: &crate::core::ast::Package) -> String {
         let mut out = String::new();
 
-        out.push_str("#![no_std]\n");
-        out.push_str("pub mod iris {\n");
-
         out.push_str("pub mod packages {\n");
         out.push_str(gen_code(&package).as_str());
         out.push_str("}\n");
@@ -44,8 +41,6 @@ impl CodeGen for Rust {
         out.push_str("_ => Err(\"Unknown data.\")\n");
         out.push_str("}\n");
         
-        out.push_str("}\n");
-
         out.push_str("}\n");
 
         out

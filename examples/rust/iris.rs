@@ -1,5 +1,4 @@
 #![no_std]
-pub mod iris {
     pub mod packages {
         pub mod Telemetry {
             #[derive(Copy, Clone)]
@@ -218,4 +217,3 @@ pub mod iris {
             _ => Err("Unknown data."),
         }
     }
-}
