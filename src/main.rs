@@ -34,8 +34,8 @@ fn main() {
     ).unwrap();
 
     out.write_all(match lang {
-        Langs::RUST(l) => l.gen_code(parser.ast.packages.first().unwrap()),
-        Langs::PYTHON(l) => l.gen_code(parser.ast.packages.first().unwrap()),
-        Langs::CPP(l) => l.gen_code(parser.ast.packages.first().unwrap())
+        Langs::RUST(l) => l.gen_code(&parser.ast.package),
+        Langs::PYTHON(l) => l.gen_code(&parser.ast.package),
+        Langs::CPP(l) => l.gen_code(&parser.ast.package)
     }.as_bytes()).unwrap();
 }

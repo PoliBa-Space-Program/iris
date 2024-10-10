@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use semver::{BuildMetadata, Prerelease, Version, VersionReq};
 
 pub struct AST {
-    pub packages: Vec<Package>
+    pub package: Package
 }
 
 pub struct Package {
@@ -191,6 +191,7 @@ pub struct Enum {
     pub name: String,
     pub variants: HashSet<String>,
     pub variants_order: Vec<EnumVariant>
+    //pub variants: HashMap<String, EnumVariant>
 }
 
 impl Enum {
