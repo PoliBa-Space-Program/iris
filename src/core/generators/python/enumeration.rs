@@ -4,7 +4,8 @@ pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
     let mut out = String::new();
 
     out.push_str(format!("            class {}(enum.IntEnum):\n", enmn.name).as_str());
-    for variant in &enmn.variants_order {
+    
+    for variant in enmn.variants.values() {
         out.push_str(format!("                {} = {}\n", variant.name, variant.value).as_str());
     }
     
@@ -14,7 +15,8 @@ pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
     out.push_str("                @staticmethod\n");
     out.push_str("                def from_be_bytes(raw: bytes):\n");
     out.push_str("                    match struct.unpack('>I', raw)[0]:\n");
-    for variant in &enmn.variants_order {
+    
+    for variant in enmn.variants.values() {
         out.push_str(format!("                        case {}:\n", variant.value).as_str());
         out.push_str(format!("                            return Iris.Packages.{}.{}.{}\n", _package.name.as_ref().unwrap(), enmn.name, variant.name).as_str());
     }

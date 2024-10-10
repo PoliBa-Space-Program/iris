@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use semver::{BuildMetadata, Prerelease, Version, VersionReq};
 
@@ -22,8 +22,7 @@ impl Package {
 
     pub fn add_enum_variant(&mut self, enum_name: &String, variant: EnumVariant) {
         let e = self.enums.get_mut(enum_name).unwrap();
-        e.variants.insert(variant.name.clone());
-        e.variants_order.push(variant);
+        e.variants.insert(variant.name.clone(), variant);
     }
 
     pub fn check_version(&self) -> bool {
@@ -189,9 +188,7 @@ impl PrimitiveTypes {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
-    pub variants: HashSet<String>,
-    pub variants_order: Vec<EnumVariant>
-    //pub variants: HashMap<String, EnumVariant>
+    pub variants: HashMap<String, EnumVariant>
 }
 
 impl Enum {

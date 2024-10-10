@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, error::{error, ErrorType}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
 
@@ -48,7 +48,7 @@ impl Parser {
     
         for e in self.ast.package.enums.values() {
             println!("{:?}:", e.name);
-            for v in &e.variants_order {
+            for v in e.variants.values() {
                 println!("{:?} {:?}", v.name, v.value)
             }
         }
@@ -214,8 +214,7 @@ impl Parser {
                 else {
                     self.ast.package.enums.insert(name.clone(), ast::Enum {
                         name: name.clone(),
-                        variants: HashSet::new(),
-                        variants_order: Vec::new()
+                        variants: HashMap::new()
                     });
                 }
                 self.curly_brackets += 1;
@@ -306,10 +305,10 @@ impl Parser {
 
     /// Add the variant to the enum
     fn enum_variant(&mut self) {
-        let variant_value = self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
+        let variant_value = self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.len();
         
         let name = self.peek(0).value.clone().unwrap();
-        if self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name) {
+        if self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains_key(&name) {
             error(ErrorType::Parser, "Variant name already used.", 1, self.row, self.col);
         }
 

@@ -6,7 +6,7 @@ pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
     out.push_str(format!("class {} {{\n", enmn.name).as_str());
     out.push_str("public:\n");
     out.push_str("enum Value {\n");
-    for v in &enmn.variants_order {
+    for v in enmn.variants.values() {
         out.push_str(format!("{} = {},\n", v.name, v.value).as_str());
     }
     out.push_str("};\n");

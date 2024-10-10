@@ -33,8 +33,8 @@ namespace iris
                 {
                     SLEEP = 0,
                     ACTIVE = 1,
-                    FLIGHT = 2,
                     IDLE = 3,
+                    FLIGHT = 2,
                 };
                 static inline size_t BYTES_LENGTH() { return 4; }
                 iris::byte DATA_BUFFER[4] = {0};
@@ -58,24 +58,66 @@ namespace iris
                     return Status(iris::from_be_bytes<unsigned int>(raw));
                 }
             };
+            class Battery
+            {
+            public:
+                static inline unsigned int NAME_HASH() { return 2215305518; }
+                static inline size_t BYTES_LENGTH() { return 4 + 4; }
+                iris::byte DATA_BUFFER[4 + 4] = {0};
+                float charge;
+                Battery() {}
+                Battery(float charge)
+                {
+                    this->charge = charge;
+                }
+                iris::byte *encode()
+                {
+                    iris::to_be_bytes(this->NAME_HASH(), this->DATA_BUFFER);
+                    this->to_be_bytes();
+                    return this->DATA_BUFFER;
+                }
+                inline iris::byte *to_be_bytes()
+                {
+                    return this->to_be_bytes(this->DATA_BUFFER + 4);
+                }
+                iris::byte *to_be_bytes(iris::byte *buffer)
+                {
+                    int i = 0;
+                    iris::to_be_bytes(this->charge, buffer + i);
+                    i += sizeof(this->charge);
+                    return buffer;
+                }
+                static Battery decode(iris::byte *raw)
+                {
+                    return Battery::from_be_bytes(raw + 4);
+                }
+                static Battery from_be_bytes(iris::byte *raw)
+                {
+                    Battery out = Battery();
+                    int i = 0;
+                    out.charge = iris::from_be_bytes<float>(raw + i);
+                    i += sizeof(float);
+                    return out;
+                }
+            };
             class Computer
             {
             public:
                 static inline unsigned int NAME_HASH() { return 3613607352; }
                 static inline size_t BYTES_LENGTH() { return 16 + 4; }
                 iris::byte DATA_BUFFER[16 + 4] = {0};
-                Status status;
-                Battery batteries[2];
                 unsigned int id;
+                Battery batteries[2];
+                Status status;
                 Computer() {}
                 Computer(unsigned int id, Battery *batteries, Status status)
                 {
-                    this->status = status;
+                    this->id = id;
                     for (int i = 0; i < 2; i++)
                     {
                         this->batteries[i] = batteries[i];
                     }
-                    this->id = id;
+                    this->status = status;
                 }
                 iris::byte *encode()
                 {
@@ -172,63 +214,21 @@ namespace iris
                     return out;
                 }
             };
-            class Battery
-            {
-            public:
-                static inline unsigned int NAME_HASH() { return 2215305518; }
-                static inline size_t BYTES_LENGTH() { return 4 + 4; }
-                iris::byte DATA_BUFFER[4 + 4] = {0};
-                float charge;
-                Battery() {}
-                Battery(float charge)
-                {
-                    this->charge = charge;
-                }
-                iris::byte *encode()
-                {
-                    iris::to_be_bytes(this->NAME_HASH(), this->DATA_BUFFER);
-                    this->to_be_bytes();
-                    return this->DATA_BUFFER;
-                }
-                inline iris::byte *to_be_bytes()
-                {
-                    return this->to_be_bytes(this->DATA_BUFFER + 4);
-                }
-                iris::byte *to_be_bytes(iris::byte *buffer)
-                {
-                    int i = 0;
-                    iris::to_be_bytes(this->charge, buffer + i);
-                    i += sizeof(this->charge);
-                    return buffer;
-                }
-                static Battery decode(iris::byte *raw)
-                {
-                    return Battery::from_be_bytes(raw + 4);
-                }
-                static Battery from_be_bytes(iris::byte *raw)
-                {
-                    Battery out = Battery();
-                    int i = 0;
-                    out.charge = iris::from_be_bytes<float>(raw + i);
-                    i += sizeof(float);
-                    return out;
-                }
-            };
         }
     }
     template <typename T>
     T decode(byte *raw, size_t len)
     {
         unsigned int struct_name_hash = from_be_bytes<unsigned int>(raw);
-        if (struct_name_hash == packages::Telemetry::Computer::NAME_HASH() && len == packages::Telemetry::Computer::BYTES_LENGTH())
+        if (struct_name_hash == packages::Telemetry::Battery::NAME_HASH() && len == packages::Telemetry::Battery::BYTES_LENGTH())
+        {
+            return T::decode(raw);
+        }
+        else if (struct_name_hash == packages::Telemetry::Computer::NAME_HASH() && len == packages::Telemetry::Computer::BYTES_LENGTH())
         {
             return T::decode(raw);
         }
         else if (struct_name_hash == packages::Telemetry::Data::NAME_HASH() && len == packages::Telemetry::Data::BYTES_LENGTH())
-        {
-            return T::decode(raw);
-        }
-        else if (struct_name_hash == packages::Telemetry::Battery::NAME_HASH() && len == packages::Telemetry::Battery::BYTES_LENGTH())
         {
             return T::decode(raw);
         }
@@ -239,24 +239,24 @@ namespace iris
     }
     enum Structs
     {
+        Telemetry_Battery,
         Telemetry_Computer,
         Telemetry_Data,
-        Telemetry_Battery,
     };
     Structs check_type(byte *raw, size_t len)
     {
         unsigned int struct_name_hash = from_be_bytes<unsigned int>(raw);
-        if (struct_name_hash == packages::Telemetry::Computer::NAME_HASH() && len == packages::Telemetry::Computer::BYTES_LENGTH())
+        if (struct_name_hash == packages::Telemetry::Battery::NAME_HASH() && len == packages::Telemetry::Battery::BYTES_LENGTH())
+        {
+            return Structs::Telemetry_Battery;
+        }
+        else if (struct_name_hash == packages::Telemetry::Computer::NAME_HASH() && len == packages::Telemetry::Computer::BYTES_LENGTH())
         {
             return Structs::Telemetry_Computer;
         }
         else if (struct_name_hash == packages::Telemetry::Data::NAME_HASH() && len == packages::Telemetry::Data::BYTES_LENGTH())
         {
             return Structs::Telemetry_Data;
-        }
-        else if (struct_name_hash == packages::Telemetry::Battery::NAME_HASH() && len == packages::Telemetry::Battery::BYTES_LENGTH())
-        {
-            return Structs::Telemetry_Battery;
         }
         else
         {
