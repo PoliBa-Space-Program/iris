@@ -65,8 +65,9 @@ Only 1-D arrays are supported.
 All the arrays need to have known size at compile time.
 Because this serialization format is meant to run on embedded systems with limited resources, we can't use the heap (we could but the trouble in most cases is not paid off). For this reason no dynamic data structures, but the size must be known at compile time.
 ```
-struct A:
-    u32[11] array
+struct A {
+    u32[11] array;
+}
 ```
 
 
@@ -95,10 +96,10 @@ Corresponding types by language:
 ### Comments
 To create a single line comment use `#`.
 ```
-version 23.1.3 # This is a comment
+version 23.1.3; # This is a comment
 
 # And this is another comment
-package Something
+package Something;
 ```
 
 ## File format
@@ -185,8 +186,5 @@ Check the `examples` folder to see how to use the generated code.
 
 ## To Do
 Next things to do:
- - imports
  - N-dimensions arrays
  - random access
-
-https://medium.com/@BadFoolPrototype/writing-a-simple-code-generator-7af057c58d22
