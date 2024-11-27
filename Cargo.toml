@@ -1,9 +1,11 @@
 [package]
 name = "iris"
-version = "3.1.0"
+version = "3.2.0"
 edition = "2021"
 
 [dependencies]
 regex = "1.10.5"
 clap = { version = "4.5.8", features = ["derive"] }
 semver = "1.0.23"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0"

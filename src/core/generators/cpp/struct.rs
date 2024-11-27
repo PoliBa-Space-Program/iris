@@ -16,8 +16,9 @@ pub fn gen_code(strc: &Struct, package: &Package) -> String {
     out.push_str(format!("{}() {{}}\n", strc.name).as_str());
     out.push_str(format!("{}(", strc.name).as_str());
     let mut counter = 1;
-    for f in strc.fields.values() {
-        out.push_str(gen_arg_declaration(f).as_str());
+    //for f in strc.fields.values() {
+    for f in &strc.fields_order {
+        out.push_str(gen_arg_declaration(strc.fields.get(f).unwrap()).as_str());
         if counter < strc.fields.len() {
             out.push_str(",");
             counter += 1;

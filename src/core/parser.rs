@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use super::{ast::{self, ComplexTypes, FieldType, Package, PrimitiveTypes, StructField}, error::{error, ErrorType}, token_types::TokenTypes, tokenizer::{Token, Tokenizer}};
 
@@ -18,7 +18,7 @@ impl Parser {
         let mut parser = Parser {
             tokenizer: Tokenizer::new(src),
             ast: ast::AST {
-                packages: Vec::new()
+                package: Package { name: None, version: None, structs: HashMap::new(), enums: HashMap::new() }
             },
             index: 0,
             curly_brackets: 0,
@@ -37,21 +37,19 @@ impl Parser {
         println!("{:?}", self.tokenizer.structs);
         println!("{:?}", self.tokenizer.enums);
 
-        for p in &self.ast.packages {
-            println!("{:?} {:?}", p.name, p.version);
+        println!("{:?} {:?}", self.ast.package.name, self.ast.package.version);
             
-            for s in p.structs.values() {
-                println!("{:?}:", s.name);
-                for f in s.fields.values() {
-                    println!("{:?} {:?} [{:?}]", f.name, f.t, f.array);
-                }
+        for s in self.ast.package.structs.values() {
+            println!("{:?}:", s.name);
+            for f in s.fields.values() {
+                println!("{:?} {:?} [{:?}]", f.name, f.t, f.array);
             }
+        }
     
-            for e in p.enums.values() {
-                println!("{:?}:", e.name);
-                for v in &e.variants_order {
-                    println!("{:?} {:?}", v.name, v.value)
-                }
+        for e in self.ast.package.enums.values() {
+            println!("{:?}:", e.name);
+            for v in e.variants.values() {
+                println!("{:?} {:?}", v.name, v.value)
             }
         }
     }
@@ -72,12 +70,12 @@ impl Parser {
 
     /// Create the AST used for code generation
     pub fn generate_ast(&mut self) {
-        self.ast.packages.push(Package {
+        self.ast.package = Package {
             name: None,
             version: None,
             structs: HashMap::new(),
             enums: HashMap::new()
-        });
+        };
         
         while self.index < self.tokenizer.tokens.len() {
             let token = self.tokenizer.tokens.get(self.index).unwrap();
@@ -122,13 +120,13 @@ impl Parser {
 
     /// Read the version declaration
     fn version(&mut self) {
-        if self.ast.packages.last().unwrap().version != None {
+        if self.ast.package.version != None {
             error(ErrorType::Parser, "Version already declared.", 1, self.row, self.col);
         }
 
         let token = self.next();
         if token.t == TokenTypes::SemanticVersion {
-            self.ast.packages.last_mut().unwrap().version = Some(token.value.clone().unwrap());
+            self.ast.package.version = Some(token.value.clone().unwrap());
 
             let token = self.next();
             if token.t != TokenTypes::SemiColon {
@@ -139,20 +137,20 @@ impl Parser {
             error(ErrorType::Parser, "Expected semantic version after keyword `version`.", 1, token.row, token.col);
         }
 
-        if !self.ast.packages.last().unwrap().check_version() {
+        if !self.ast.package.check_version() {
             error(ErrorType::Parser, "Invalid version not valid.", 1, self.row, self.col);
         }
     }
 
     /// Read the declaration of the package name
     fn package(&mut self) {
-        if self.ast.packages.last().unwrap().name != None {
+        if self.ast.package.name != None {
             error(ErrorType::Parser, "Package name already declared.", 1, self.row, self.col);
         }
 
         let token = self.next();
         if token.t == TokenTypes::Identifier {
-            self.ast.packages.last_mut().unwrap().name = Some(token.value.clone().unwrap());
+            self.ast.package.name = Some(token.value.clone().unwrap());
         
             let token = self.next();
             if token.t != TokenTypes::SemiColon {
@@ -176,11 +174,11 @@ impl Parser {
 
             let token_t = self.next().t.clone();
             if token_t == TokenTypes::OpenCurlyBracket {
-                if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
+                if self.ast.package.structs.contains_key(&name) || self.ast.package.enums.contains_key(&name) {
                     error(ErrorType::Parser, "Name already used.", 1, self.row, self.col);
                 }
                 else {
-                    self.ast.packages.last_mut().unwrap().structs.insert(name.clone(), ast::Struct {
+                    self.ast.package.structs.insert(name.clone(), ast::Struct {
                         name: name.clone(),
                         fields: HashMap::new(),
                         fields_order: Vec::new()
@@ -210,14 +208,13 @@ impl Parser {
 
             let token_t = self.next().t.clone();
             if token_t == TokenTypes::OpenCurlyBracket {
-                if self.ast.packages.last().unwrap().structs.contains_key(&name) || self.ast.packages.last().unwrap().enums.contains_key(&name) {
+                if self.ast.package.structs.contains_key(&name) || self.ast.package.enums.contains_key(&name) {
                     error(ErrorType::Parser, "Name already used.", 1, self.row, self.col);
                 }
                 else {
-                    self.ast.packages.last_mut().unwrap().enums.insert(name.clone(), ast::Enum {
+                    self.ast.package.enums.insert(name.clone(), ast::Enum {
                         name: name.clone(),
-                        variants: HashSet::new(),
-                        variants_order: Vec::new()
+                        variants: HashMap::new()
                     });
                 }
                 self.curly_brackets += 1;
@@ -296,11 +293,11 @@ impl Parser {
             error(ErrorType::Parser, "Expected a semicolon `;`.", 1, self.row, self.col);
         }
 
-        if self.ast.packages.last().unwrap().structs.get(self.in_struct.as_ref().unwrap()).unwrap().fields.contains_key(&name) {
+        if self.ast.package.structs.get(self.in_struct.as_ref().unwrap()).unwrap().fields.contains_key(&name) {
             error(ErrorType::Parser, "Field name already used.", 1, self.row, self.col);
         }
 
-        self.ast.packages.last_mut().unwrap().add_struct_field(
+        self.ast.package.add_struct_field(
             self.in_struct.as_ref().unwrap(), 
             StructField { name, t: field_type, array }
         );
@@ -308,16 +305,16 @@ impl Parser {
 
     /// Add the variant to the enum
     fn enum_variant(&mut self) {
-        let variant_value = self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants_order.len();
+        let variant_value = self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.len();
         
         let name = self.peek(0).value.clone().unwrap();
-        if self.ast.packages.last().unwrap().enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains(&name) {
+        if self.ast.package.enums.get(self.in_enum.as_ref().unwrap()).unwrap().variants.contains_key(&name) {
             error(ErrorType::Parser, "Variant name already used.", 1, self.row, self.col);
         }
 
         let token = self.next();
         if token.t == TokenTypes::SemiColon {
-            self.ast.packages.last_mut().unwrap().add_enum_variant(
+            self.ast.package.add_enum_variant(
                 self.in_enum.as_ref().unwrap(), 
                 ast::EnumVariant {
                     name,
