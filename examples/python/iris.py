@@ -6,9 +6,9 @@ class Iris:
         class Telemetry:
             class Status(enum.IntEnum):
                 ACTIVE = 1
+                IDLE = 3
                 SLEEP = 0
                 FLIGHT = 2
-                IDLE = 3
                 def to_be_bytes(self) -> bytes:
                     return struct.pack('>I', self)
                 @staticmethod
@@ -16,14 +16,33 @@ class Iris:
                     match struct.unpack('>I', raw)[0]:
                         case 1:
                             return Iris.Packages.Telemetry.Status.ACTIVE
+                        case 3:
+                            return Iris.Packages.Telemetry.Status.IDLE
                         case 0:
                             return Iris.Packages.Telemetry.Status.SLEEP
                         case 2:
                             return Iris.Packages.Telemetry.Status.FLIGHT
-                        case 3:
-                            return Iris.Packages.Telemetry.Status.IDLE
                         case _:
                             raise 'No variant found.'
+            class Battery:
+                NAME_HASH = 2215305518
+                BYTES_LENGTH = 4 + 4
+                def __init__(self, charge):
+                    self.charge = charge
+                def encode(self) -> bytes:
+                    return struct.pack('>I4B', self.NAME_HASH, *self.to_be_bytes())
+                def to_be_bytes(self) -> bytes:
+                    return struct.pack('>f', self.charge)
+                @staticmethod
+                def decode(raw: bytes):
+                    data = struct.unpack('>I4B', raw)
+                    return Iris.Packages.Telemetry.Battery.from_be_bytes(bytes(data[1:]))
+                @staticmethod
+                def from_be_bytes(raw: bytes):
+                    data = struct.unpack('>f', raw)
+                    return Iris.Packages.Telemetry.Battery(
+                        charge=data[0],
+                    )
             class Computer:
                 NAME_HASH = 3613607352
                 BYTES_LENGTH = 16 + 4
@@ -46,25 +65,6 @@ class Iris:
                         id=data[0],
                         batteries=[Iris.Packages.Telemetry.Battery.from_be_bytes(bytes(data[i:i+4])) for i in range(1, 8, 4)],
                         status=data[9],
-                    )
-            class Battery:
-                NAME_HASH = 2215305518
-                BYTES_LENGTH = 4 + 4
-                def __init__(self, charge):
-                    self.charge = charge
-                def encode(self) -> bytes:
-                    return struct.pack('>I4B', self.NAME_HASH, *self.to_be_bytes())
-                def to_be_bytes(self) -> bytes:
-                    return struct.pack('>f', self.charge)
-                @staticmethod
-                def decode(raw: bytes):
-                    data = struct.unpack('>I4B', raw)
-                    return Iris.Packages.Telemetry.Battery.from_be_bytes(bytes(data[1:]))
-                @staticmethod
-                def from_be_bytes(raw: bytes):
-                    data = struct.unpack('>f', raw)
-                    return Iris.Packages.Telemetry.Battery(
-                        charge=data[0],
                     )
             class Data:
                 NAME_HASH = 1062369733
@@ -89,10 +89,10 @@ class Iris:
     def decode(raw: bytes):
         name_hash = struct.unpack('>I', raw[0:4])[0]
         match name_hash:
-            case Iris.Packages.Telemetry.Computer.NAME_HASH if len(raw) == Iris.Packages.Telemetry.Computer.BYTES_LENGTH:
-                return Iris.Packages.Telemetry.Computer.decode(raw)
             case Iris.Packages.Telemetry.Battery.NAME_HASH if len(raw) == Iris.Packages.Telemetry.Battery.BYTES_LENGTH:
                 return Iris.Packages.Telemetry.Battery.decode(raw)
+            case Iris.Packages.Telemetry.Computer.NAME_HASH if len(raw) == Iris.Packages.Telemetry.Computer.BYTES_LENGTH:
+                return Iris.Packages.Telemetry.Computer.decode(raw)
             case Iris.Packages.Telemetry.Data.NAME_HASH if len(raw) == Iris.Packages.Telemetry.Data.BYTES_LENGTH:
                 return Iris.Packages.Telemetry.Data.decode(raw)
             case _:

@@ -7,14 +7,14 @@ use serde_json::ser::to_string_pretty;
 
 
 #[derive(Deserialize, Serialize)]
-pub struct Schema {
+pub struct KronosCodeGen {
     pub version: String,
     pub package: String,
     pub data: HashMap<String, HashMap<String, String>>,
     pub rust_default: HashMap<String, String>
 }
 
-impl Schema {
+impl KronosCodeGen {
     fn gen_default_value(&self, t: &FieldType, package: &Package) -> String {
         match t {
             FieldType::PRIMITIVE(p) => {
@@ -85,8 +85,8 @@ impl Schema {
         }
     }
     
-    // Create file schema.json
-    pub fn create_schema(&mut self, path: String, ast: &AST) {
+    // Create file kronos-code-gen.json
+    pub fn generate(&mut self, path: String, ast: &AST) {
         self.version = ast.package.version.clone().unwrap();
         self.package = ast.package.name.clone().unwrap();
 

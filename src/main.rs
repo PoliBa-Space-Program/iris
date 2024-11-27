@@ -45,12 +45,12 @@ fn main() {
     }.as_bytes()).unwrap();
 
     if args.kronos_code_gen {
-        let mut s = kronos_code_gen::Schema {
+        let mut s = kronos_code_gen::KronosCodeGen {
             version: String::new(),
             package: String::new(),
             data: HashMap::new(),
             rust_default: HashMap::new()
         };
-        s.create_schema(args.out, &parser.ast);
+        s.generate(args.out, &parser.ast);
     }
 }
