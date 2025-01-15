@@ -19,6 +19,8 @@ impl CodeGen for CPP {
         let mut out = String::new();
 
         out.push_str("#pragma once\n");
+        out.push_str("#include <stddef.h>");
+        out.push_str("#include <stdint.h>");
         out.push_str("namespace iris {\n");
         
         out.push_str("typedef uint8_t byte;\n");
