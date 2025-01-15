@@ -1,0 +1,29 @@
+{
+  "package": "Telemetry",
+  "data": {
+    "Data": {
+      "computers[0].batteries[0].charge": "f32",
+      "computers[0].id": "u32",
+      "computers[1].batteries[0].charge": "f32",
+      "computers[1].id": "u32",
+      "computers[0].status": "Status",
+      "computers[1].status": "Status",
+      "computers[1].batteries[1].charge": "f32",
+      "computers[0].batteries[1].charge": "f32"
+    },
+    "Computer": {
+      "batteries[0].charge": "f32",
+      "batteries[1].charge": "f32",
+      "id": "u32",
+      "status": "Status"
+    },
+    "Battery": {
+      "charge": "f32"
+    }
+  },
+  "size": {
+    "Computer": 16,
+    "Data": 32,
+    "Battery": 4
+  }
+}

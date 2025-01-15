@@ -5,16 +5,16 @@ pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
 
     out.push_str(format!("class {} {{\n", enmn.name).as_str());
     out.push_str("public:\n");
-    out.push_str("enum Value {\n");
+    out.push_str("enum Value : uint32_t {\n");
     for v in enmn.variants.values() {
         out.push_str(format!("{} = {},\n", v.name, v.value).as_str());
     }
     out.push_str("};\n");
-    out.push_str("static inline size_t BYTES_LENGTH() { return 4; }\n");
+    out.push_str("static const size_t BYTES_LENGTH = 4;\n");
     out.push_str("iris::byte DATA_BUFFER[4] = {0};\n");
     out.push_str("Value value;\n");
     out.push_str(format!("{}() {{ }}\n", enmn.name).as_str());
-    out.push_str(format!("{}(unsigned int value) {{\n", enmn.name).as_str());
+    out.push_str(format!("{}(uint32_t value) {{\n", enmn.name).as_str());
     out.push_str("this->value = Value(value);\n");
     out.push_str("}\n");
     out.push_str("inline iris::byte *to_be_bytes() {\n");
@@ -25,7 +25,7 @@ pub fn gen_code(enmn: &Enum, _package: &Package) -> String {
     out.push_str("return buffer;\n");
     out.push_str("}\n");
     out.push_str("static Status from_be_bytes(iris::byte *raw) {\n");
-    out.push_str("return Status(iris::from_be_bytes<unsigned int>(raw));\n");
+    out.push_str("return Status(iris::from_be_bytes<uint32_t>(raw));\n");
     out.push_str("}\n");
     out.push_str("};\n");
 

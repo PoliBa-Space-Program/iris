@@ -5,23 +5,23 @@ class Iris:
     class Packages:
         class Telemetry:
             class Status(enum.IntEnum):
-                ACTIVE = 1
+                FLIGHT = 2
                 IDLE = 3
                 SLEEP = 0
-                FLIGHT = 2
+                ACTIVE = 1
                 def to_be_bytes(self) -> bytes:
                     return struct.pack('>I', self)
                 @staticmethod
                 def from_be_bytes(raw: bytes):
                     match struct.unpack('>I', raw)[0]:
-                        case 1:
-                            return Iris.Packages.Telemetry.Status.ACTIVE
+                        case 2:
+                            return Iris.Packages.Telemetry.Status.FLIGHT
                         case 3:
                             return Iris.Packages.Telemetry.Status.IDLE
                         case 0:
                             return Iris.Packages.Telemetry.Status.SLEEP
-                        case 2:
-                            return Iris.Packages.Telemetry.Status.FLIGHT
+                        case 1:
+                            return Iris.Packages.Telemetry.Status.ACTIVE
                         case _:
                             raise 'No variant found.'
             class Battery:

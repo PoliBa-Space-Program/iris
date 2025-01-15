@@ -1,4 +1,4 @@
-use iris::{decode, packages::Telemetry::{Battery, Computer, Data, Status}, Structs};
+use iris::{decode, Telemetry::{Battery, Computer, Data, Status}, Structs};
 
 mod iris;
 

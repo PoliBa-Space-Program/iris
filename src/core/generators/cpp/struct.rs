@@ -7,8 +7,8 @@ pub fn gen_code(strc: &Struct, package: &Package) -> String {
 
     out.push_str(format!("class {} {{\n", strc.name).as_str());
     out.push_str("public:\n");
-    out.push_str(format!("static inline unsigned int NAME_HASH() {{ return {}; }}\n", strc.fnv_1a()).as_str());
-    out.push_str(format!("static inline size_t BYTES_LENGTH() {{ return {} + 4; }}\n", strc.size(package)).as_str());
+    out.push_str(format!("static const uint32_t NAME_HASH = {};\n", strc.fnv_1a()).as_str());
+    out.push_str(format!("static const size_t BYTES_LENGTH = {} + 4;\n", strc.size(package)).as_str());
     out.push_str(format!("iris::byte DATA_BUFFER[{} + 4] = {{0}};\n", strc.size(package)).as_str());
     for f in strc.fields.values() {
         out.push_str(gen_prop_declaration(f).as_str());
@@ -31,7 +31,7 @@ pub fn gen_code(strc: &Struct, package: &Package) -> String {
     out.push_str("}\n");
 
     out.push_str("iris::byte *encode() {\n");
-    out.push_str("iris::to_be_bytes(this->NAME_HASH(), this->DATA_BUFFER);\n");
+    out.push_str("iris::to_be_bytes(this->NAME_HASH, this->DATA_BUFFER);\n");
     out.push_str("this->to_be_bytes();\n");
     out.push_str("return this->DATA_BUFFER;\n");
     out.push_str("}\n");

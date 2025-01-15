@@ -46,10 +46,9 @@ fn main() {
 
     if args.kronos_code_gen {
         let mut s = kronos_code_gen::KronosCodeGen {
-            version: String::new(),
             package: String::new(),
             data: HashMap::new(),
-            rust_default: HashMap::new()
+            size: HashMap::new()
         };
         s.generate(args.out, &parser.ast);
     }
