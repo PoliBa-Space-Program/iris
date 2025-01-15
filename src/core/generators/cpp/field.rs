@@ -52,7 +52,7 @@ pub fn gen_to_be_bytes_conv(field: &StructField) -> String {
             match &field.t {
                 crate::core::ast::FieldType::COMPLEX(complex_types) => {
                     out.push_str(format!("this->{}[j].to_be_bytes(buffer + i);\n", field.name).as_str());
-                    out.push_str(format!("i += this->{}[j].BYTES_LENGTH()", field.name).as_str());
+                    out.push_str(format!("i += this->{}[j].BYTES_LENGTH", field.name).as_str());
                     match complex_types {
                         crate::core::ast::ComplexTypes::Struct(_) => out.push_str(" - 4"),
                         crate::core::ast::ComplexTypes::Enum(_) => {},
@@ -71,7 +71,7 @@ pub fn gen_to_be_bytes_conv(field: &StructField) -> String {
             match &field.t {
                 crate::core::ast::FieldType::COMPLEX(complex_types) => {
                     out.push_str(format!("this->{}.to_be_bytes(buffer + i);\n", field.name).as_str());
-                    out.push_str(format!("i += this->{}.BYTES_LENGTH()", field.name).as_str());
+                    out.push_str(format!("i += this->{}.BYTES_LENGTH", field.name).as_str());
                     match complex_types {
                         crate::core::ast::ComplexTypes::Struct(_) => out.push_str(" - 4"),
                         crate::core::ast::ComplexTypes::Enum(_) => {},
@@ -99,7 +99,7 @@ pub fn gen_from_be_bytes_conv(field: &StructField) -> String {
             match &field.t {
                 crate::core::ast::FieldType::COMPLEX(complex_types) => {
                     out.push_str(format!("out.{}[j] = {}::from_be_bytes(raw + i);\n", field.name, complex_types.str()).as_str());
-                    out.push_str(format!("i += {}::BYTES_LENGTH()", complex_types.str()).as_str());
+                    out.push_str(format!("i += {}::BYTES_LENGTH", complex_types.str()).as_str());
                     match complex_types {
                         crate::core::ast::ComplexTypes::Struct(_) => out.push_str(" - 4"),
                         crate::core::ast::ComplexTypes::Enum(_) => {},
@@ -118,7 +118,7 @@ pub fn gen_from_be_bytes_conv(field: &StructField) -> String {
             match &field.t {
                 crate::core::ast::FieldType::COMPLEX(complex_types) => {
                     out.push_str(format!("out.{} = {}::from_be_bytes(raw + i);\n", field.name, complex_types.str()).as_str());
-                    out.push_str(format!("i += {}::BYTES_LENGTH()", complex_types.str()).as_str());
+                    out.push_str(format!("i += {}::BYTES_LENGTH", complex_types.str()).as_str());
                     match complex_types {
                         crate::core::ast::ComplexTypes::Struct(_) => out.push_str(" - 4"),
                         crate::core::ast::ComplexTypes::Enum(_) => {},

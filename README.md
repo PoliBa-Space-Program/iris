@@ -1,16 +1,13 @@
 # iris
-Serialization format that can run everywhere.
-This format was created in order to serialize and make easier the interpretation of data received by the flight computer of a rocket.
+Serialization format that can run (allegedly) everywhere.
+Born to run on the flight computer of a rocket.
 
-The first choice was [Protocol Buffers](https://protobuf.dev/) (used in [gRPC](https://grpc.io/)), but an implementation for emebedded systems was needed. In particular in Rust no std.
-
-Also, [serde](https://github.com/serde-rs/serde) was not an option because only available for Rust but I use also C++, Python and other languages depending on what is needed.
-
-The main needs are:
- - Low bandwidth
+The main objectives are:
+ - Low memory usage
  - Easy to encode and decode
  - Fast to encode and decode
  - Run on embedded systems
+ - No heap, no external library
 
 
 ## Index
@@ -41,7 +38,7 @@ The version must be declared on top of the file.
 If the version if different from the one declared in *Cargo.toml* an error will be thrown.
 In future semantic version syntax support will be added.
 ```
-version 3.0.0;
+version 3.2.0;
 ```
 
 ### Package
@@ -105,7 +102,7 @@ package Something;
 ## File format
 ### Version
 ```
-version 3.0.0;
+version 3.2.0;
 ```
 
 ### Package
